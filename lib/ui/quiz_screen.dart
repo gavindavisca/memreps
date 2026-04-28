@@ -15,12 +15,14 @@ class QuizScreen extends StatefulWidget {
   final QuizMode mode;
   final String? partyFilter;
   final String? regionFilter;
+  final bool duplicateLastNamesOnly;
 
   const QuizScreen({
     super.key,
     required this.mode,
     this.partyFilter,
     this.regionFilter,
+    this.duplicateLastNamesOnly = false,
   });
 
   @override
@@ -30,6 +32,7 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   List<QuizQuestion> _questions = [];
   int _currentIndex = 0;
+  bool _isLoading = true;
   bool _isAnswered = false;
   String? _selectedAnswer;
   bool _isCorrect = false;
@@ -55,9 +58,19 @@ class _QuizScreenState extends State<QuizScreen> {
     final membersWithStats = await repository.getMembersWithStats(userId, legId);
 
     // 2. Filter based on user selection (Party/Region)
-    final filtered = membersWithStats.where((ms) =>
+    var filtered = membersWithStats.where((ms) =>
         (widget.partyFilter == null || ms.member.party == widget.partyFilter) &&
         (widget.regionFilter == null || ms.member.region == widget.regionFilter)).toList();
+
+    // 2.5 Filter for duplicates if requested
+    if (widget.duplicateLastNamesOnly) {
+      final counts = <String, int>{};
+      for (final ms in membersWithStats) {
+        final name = ms.member.lastName.toLowerCase().trim();
+        counts[name] = (counts[name] ?? 0) + 1;
+      }
+      filtered = filtered.where((ms) => counts[ms.member.lastName.toLowerCase().trim()]! > 1).toList();
+    }
 
     // 3. Categorize for priority selection
     final due = filtered.where((ms) => ms.review != null && ms.review!.due.isBefore(now)).toList();
@@ -94,24 +107,60 @@ class _QuizScreenState extends State<QuizScreen> {
       quizSubset.addAll(learned.take(10 - quizSubset.length).map((ms) => ms.member));
     }
 
-    final questions = quizService.generateQuestions(
-      members: quizSubset,
-      mode: widget.mode,
-      allLegislatureMembers: membersWithStats.map((ms) => ms.member).toList(),
-    );
+    try {
+      final questions = quizService.generateQuestions(
+        members: quizSubset,
+        mode: widget.mode,
+        allLegislatureMembers: membersWithStats.map((ms) => ms.member).toList(),
+      );
 
-    setState(() {
-      _questions = questions;
-    });
+      setState(() {
+        _questions = questions;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error generating questions: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_questions.isEmpty) {
+    final l10n = Provider.of<AppState>(context).l10n;
+
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final l10n = Provider.of<AppState>(context).l10n;
+    if (_questions.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.get(_getModeKey()))),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.search_off_rounded, size: 80, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.get('no_members_found'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.get('cancel')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     if (_currentIndex >= _questions.length) {
       return _buildResults(l10n);
@@ -136,6 +185,13 @@ class _QuizScreenState extends State<QuizScreen> {
                 _buildInputArea(question, l10n),
                 if (_isAnswered) ...[
                   const SizedBox(height: 16),
+                  if (widget.mode == QuizMode.multipleChoiceParties || widget.mode == QuizMode.multipleChoiceRidings) ...[
+                    Text(
+                      '${question.member.firstName} ${question.member.lastName}',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   _buildNextButton(l10n),
                 ],
               ],
@@ -149,6 +205,8 @@ class _QuizScreenState extends State<QuizScreen> {
   String _getModeKey() {
     switch (widget.mode) {
       case QuizMode.multipleChoice: return 'multi_choice';
+      case QuizMode.multipleChoiceParties: return 'multi_choice_parties';
+      case QuizMode.multipleChoiceRidings: return 'multi_choice_ridings';
       case QuizMode.activeRecall: return 'active_recall';
       case QuizMode.reverseRecall: return 'reverse_recall';
     }
@@ -216,6 +274,8 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildInputArea(QuizQuestion question, L10n l10n) {
     switch (widget.mode) {
       case QuizMode.multipleChoice:
+      case QuizMode.multipleChoiceParties:
+      case QuizMode.multipleChoiceRidings:
         return Column(
           children: question.options!.map((option) {
             final isSelected = _selectedAnswer == option;
@@ -367,7 +427,9 @@ class _QuizScreenState extends State<QuizScreen> {
     final question = _questions[_currentIndex];
     bool correct = false;
 
-    if (widget.mode == QuizMode.multipleChoice) {
+    if (widget.mode == QuizMode.multipleChoice || 
+        widget.mode == QuizMode.multipleChoiceParties ||
+        widget.mode == QuizMode.multipleChoiceRidings) {
       correct = answer == question.correctAnswer;
     } else if (widget.mode == QuizMode.activeRecall) {
       if (question.ridingOptions != null && _selectedRiding == null) {

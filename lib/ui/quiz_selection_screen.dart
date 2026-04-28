@@ -17,6 +17,7 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
   String? _selectedRegion;
   String? _selectedParty;
   bool _showFilters = false;
+  bool _duplicateLastNamesOnly = false;
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +56,18 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
             const SizedBox(height: 16),
             _buildModeCard(
               context,
-              l10n.get('active_recall'),
-              l10n.get('active_recall_desc'),
-              Icons.keyboard_rounded,
-              QuizMode.activeRecall,
+              l10n.get('multi_choice_parties'),
+              l10n.get('multi_choice_parties_desc'),
+              Icons.groups_rounded,
+              QuizMode.multipleChoiceParties,
+            ),
+            const SizedBox(height: 16),
+            _buildModeCard(
+              context,
+              l10n.get('multi_choice_ridings'),
+              l10n.get('multi_choice_ridings_desc'),
+              Icons.map_rounded,
+              QuizMode.multipleChoiceRidings,
             ),
             const SizedBox(height: 16),
             _buildModeCard(
@@ -67,6 +76,14 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
               l10n.get('reverse_recall_desc'),
               Icons.face_retouching_natural_rounded,
               QuizMode.reverseRecall,
+            ),
+            const SizedBox(height: 16),
+            _buildModeCard(
+              context,
+              l10n.get('active_recall'),
+              l10n.get('active_recall_desc'),
+              Icons.keyboard_rounded,
+              QuizMode.activeRecall,
             ),
           ],
         ),
@@ -130,6 +147,25 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                   )),
                 ],
               ),
+              const SizedBox(height: 16),
+              Text(l10n.get('last_name'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilterChip(
+                    label: Text(l10n.get('all')),
+                    selected: !_duplicateLastNamesOnly,
+                    onSelected: (_) => setState(() => _duplicateLastNamesOnly = false),
+                  ),
+                  FilterChip(
+                    label: Text(l10n.get('duplicate')),
+                    selected: _duplicateLastNamesOnly,
+                    onSelected: (_) => setState(() => _duplicateLastNamesOnly = true),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -191,6 +227,7 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
           mode: mode,
           partyFilter: _selectedParty,
           regionFilter: _selectedRegion,
+          duplicateLastNamesOnly: _duplicateLastNamesOnly,
         ),
       ),
     );

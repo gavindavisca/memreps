@@ -2,16 +2,18 @@ import '../data/database.dart';
 
 enum QuizMode {
   multipleChoice,
+  multipleChoiceParties,
+  multipleChoiceRidings,
   activeRecall,
   reverseRecall,
 }
 
 class QuizQuestion {
   final Member member;
-  final List<String>? options; // For Multiple Choice names
-  final List<Member>? memberOptions; // For Reverse Recall faces
-  final List<String>? partyOptions; // For Reverse Recall parties
-  final List<String>? ridingOptions; // For Active Recall riding distinction
+  final List<String>? options; // For Multiple Choice Names
+  final List<Member>? memberOptions; // For Reverse Recall Names faces
+  final List<String>? partyOptions; // For Reverse Recall Names parties
+  final List<String>? ridingOptions; // For Active Recall Names riding distinction
   final String? correctAnswer;
   final Member? correctMember;
 
@@ -37,6 +39,10 @@ class QuizService {
       switch (mode) {
         case QuizMode.multipleChoice:
           return _generateMultipleChoice(member, allLegislatureMembers);
+        case QuizMode.multipleChoiceParties:
+          return _generateMultipleChoiceParties(member, allLegislatureMembers);
+        case QuizMode.multipleChoiceRidings:
+          return _generateMultipleChoiceRidings(member, allLegislatureMembers);
         case QuizMode.activeRecall:
           return _generateActiveRecall(member, allLegislatureMembers);
         case QuizMode.reverseRecall:
@@ -62,6 +68,54 @@ class QuizService {
     );
   }
 
+  QuizQuestion _generateMultipleChoiceParties(Member member, List<Member> allMembers) {
+    final allParties = allMembers
+        .map((m) => m.party)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    
+    final correctParty = member.party ?? 'Independent';
+    final distractors = allParties
+        .where((p) => p != correctParty)
+        .toList()
+      ..shuffle();
+    
+    final options = distractors.take(3).toList();
+    options.add(correctParty);
+    options.shuffle();
+
+    return QuizQuestion(
+      member: member,
+      options: options,
+      correctAnswer: correctParty,
+    );
+  }
+
+  QuizQuestion _generateMultipleChoiceRidings(Member member, List<Member> allMembers) {
+    final allRidings = allMembers
+        .map((m) => m.riding)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    
+    final correctRiding = member.riding ?? 'Independent';
+    final distractors = allRidings
+        .where((r) => r != correctRiding)
+        .toList()
+      ..shuffle();
+    
+    final options = distractors.take(3).toList();
+    options.add(correctRiding);
+    options.shuffle();
+
+    return QuizQuestion(
+      member: member,
+      options: options,
+      correctAnswer: correctRiding,
+    );
+  }
+
   QuizQuestion _generateActiveRecall(Member member, List<Member> allMembers) {
     // Requires typing the last name. 
     // If there's another member with the same last name (case-insensitive),
@@ -83,7 +137,7 @@ class QuizService {
           .toList()
         ..shuffle();
       
-      ridingOptions = [member.riding!];
+      ridingOptions = [member.riding ?? 'Unknown'];
       ridingOptions.addAll(otherRidings);
       ridingOptions.addAll(distractors.take(4 - ridingOptions.length));
       ridingOptions.shuffle();
