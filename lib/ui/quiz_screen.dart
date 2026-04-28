@@ -33,6 +33,7 @@ class _QuizScreenState extends State<QuizScreen> {
   List<QuizQuestion> _questions = [];
   int _currentIndex = 0;
   bool _isLoading = true;
+  double _filterPercentage = 0.0;
   bool _isAnswered = false;
   String? _selectedAnswer;
   bool _isCorrect = false;
@@ -71,6 +72,10 @@ class _QuizScreenState extends State<QuizScreen> {
       }
       filtered = filtered.where((ms) => counts[ms.member.lastName.toLowerCase().trim()]! > 1).toList();
     }
+
+    final totalCount = membersWithStats.length;
+    final filteredCount = filtered.length;
+    _filterPercentage = totalCount > 0 ? (filteredCount / totalCount) : 0.0;
 
     // 3. Categorize for priority selection
     final due = filtered.where((ms) => ms.review != null && ms.review!.due.isBefore(now)).toList();
@@ -462,19 +467,41 @@ class _QuizScreenState extends State<QuizScreen> {
     await repository.submitReview(userId, memberId, rating);
   }
 
+  Future<void> _saveQuizResult() async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final repository = Provider.of<Repository>(context, listen: false);
+    
+    await repository.saveQuizResult(
+      userId: appState.currentProfile!.id,
+      userName: appState.currentProfile!.firstName,
+      legislatureId: appState.currentLegislature!.id,
+      quizModeId: _getModeKey(),
+      filterPercentage: _filterPercentage,
+      scorePercentage: _correctCount / _questions.length,
+    );
+  }
+
   Widget _buildNextButton(L10n l10n) {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         child: ElevatedButton(
           onPressed: () {
-            setState(() {
-              _currentIndex++;
-              _isAnswered = false;
-              _selectedAnswer = null;
-              _selectedRiding = null;
-              _textController.clear();
-            });
+            FocusScope.of(context).unfocus();
+            if (_currentIndex < _questions.length - 1) {
+              setState(() {
+                _currentIndex++;
+                _isAnswered = false;
+                _selectedAnswer = null;
+                _selectedRiding = null;
+                _textController.clear();
+              });
+            } else {
+              _saveQuizResult();
+              setState(() {
+                _currentIndex++;
+              });
+            }
           },
           style: ElevatedButton.styleFrom(
             minimumSize: const Size.fromHeight(56),

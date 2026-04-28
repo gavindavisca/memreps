@@ -2164,6 +2164,530 @@ class FsrsReviewsCompanion extends UpdateCompanion<FsrsReview> {
   }
 }
 
+class $QuizResultsTable extends QuizResults
+    with TableInfo<$QuizResultsTable, QuizResult> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuizResultsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES profiles (id)',
+    ),
+  );
+  static const VerificationMeta _userNameMeta = const VerificationMeta(
+    'userName',
+  );
+  @override
+  late final GeneratedColumn<String> userName = GeneratedColumn<String>(
+    'user_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _legislatureIdMeta = const VerificationMeta(
+    'legislatureId',
+  );
+  @override
+  late final GeneratedColumn<int> legislatureId = GeneratedColumn<int>(
+    'legislature_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES legislatures (id)',
+    ),
+  );
+  static const VerificationMeta _quizModeIdMeta = const VerificationMeta(
+    'quizModeId',
+  );
+  @override
+  late final GeneratedColumn<String> quizModeId = GeneratedColumn<String>(
+    'quiz_mode_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _filterPercentageMeta = const VerificationMeta(
+    'filterPercentage',
+  );
+  @override
+  late final GeneratedColumn<double> filterPercentage = GeneratedColumn<double>(
+    'filter_percentage',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scorePercentageMeta = const VerificationMeta(
+    'scorePercentage',
+  );
+  @override
+  late final GeneratedColumn<double> scorePercentage = GeneratedColumn<double>(
+    'score_percentage',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    timestamp,
+    userId,
+    userName,
+    legislatureId,
+    quizModeId,
+    filterPercentage,
+    scorePercentage,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quiz_results';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuizResult> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('user_name')) {
+      context.handle(
+        _userNameMeta,
+        userName.isAcceptableOrUnknown(data['user_name']!, _userNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userNameMeta);
+    }
+    if (data.containsKey('legislature_id')) {
+      context.handle(
+        _legislatureIdMeta,
+        legislatureId.isAcceptableOrUnknown(
+          data['legislature_id']!,
+          _legislatureIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_legislatureIdMeta);
+    }
+    if (data.containsKey('quiz_mode_id')) {
+      context.handle(
+        _quizModeIdMeta,
+        quizModeId.isAcceptableOrUnknown(
+          data['quiz_mode_id']!,
+          _quizModeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_quizModeIdMeta);
+    }
+    if (data.containsKey('filter_percentage')) {
+      context.handle(
+        _filterPercentageMeta,
+        filterPercentage.isAcceptableOrUnknown(
+          data['filter_percentage']!,
+          _filterPercentageMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_filterPercentageMeta);
+    }
+    if (data.containsKey('score_percentage')) {
+      context.handle(
+        _scorePercentageMeta,
+        scorePercentage.isAcceptableOrUnknown(
+          data['score_percentage']!,
+          _scorePercentageMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scorePercentageMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuizResult map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuizResult(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_id'],
+      )!,
+      userName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_name'],
+      )!,
+      legislatureId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}legislature_id'],
+      )!,
+      quizModeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quiz_mode_id'],
+      )!,
+      filterPercentage: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}filter_percentage'],
+      )!,
+      scorePercentage: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}score_percentage'],
+      )!,
+    );
+  }
+
+  @override
+  $QuizResultsTable createAlias(String alias) {
+    return $QuizResultsTable(attachedDatabase, alias);
+  }
+}
+
+class QuizResult extends DataClass implements Insertable<QuizResult> {
+  final int id;
+  final DateTime timestamp;
+  final int userId;
+  final String userName;
+  final int legislatureId;
+  final String quizModeId;
+  final double filterPercentage;
+  final double scorePercentage;
+  const QuizResult({
+    required this.id,
+    required this.timestamp,
+    required this.userId,
+    required this.userName,
+    required this.legislatureId,
+    required this.quizModeId,
+    required this.filterPercentage,
+    required this.scorePercentage,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    map['user_id'] = Variable<int>(userId);
+    map['user_name'] = Variable<String>(userName);
+    map['legislature_id'] = Variable<int>(legislatureId);
+    map['quiz_mode_id'] = Variable<String>(quizModeId);
+    map['filter_percentage'] = Variable<double>(filterPercentage);
+    map['score_percentage'] = Variable<double>(scorePercentage);
+    return map;
+  }
+
+  QuizResultsCompanion toCompanion(bool nullToAbsent) {
+    return QuizResultsCompanion(
+      id: Value(id),
+      timestamp: Value(timestamp),
+      userId: Value(userId),
+      userName: Value(userName),
+      legislatureId: Value(legislatureId),
+      quizModeId: Value(quizModeId),
+      filterPercentage: Value(filterPercentage),
+      scorePercentage: Value(scorePercentage),
+    );
+  }
+
+  factory QuizResult.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuizResult(
+      id: serializer.fromJson<int>(json['id']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      userId: serializer.fromJson<int>(json['userId']),
+      userName: serializer.fromJson<String>(json['userName']),
+      legislatureId: serializer.fromJson<int>(json['legislatureId']),
+      quizModeId: serializer.fromJson<String>(json['quizModeId']),
+      filterPercentage: serializer.fromJson<double>(json['filterPercentage']),
+      scorePercentage: serializer.fromJson<double>(json['scorePercentage']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'userId': serializer.toJson<int>(userId),
+      'userName': serializer.toJson<String>(userName),
+      'legislatureId': serializer.toJson<int>(legislatureId),
+      'quizModeId': serializer.toJson<String>(quizModeId),
+      'filterPercentage': serializer.toJson<double>(filterPercentage),
+      'scorePercentage': serializer.toJson<double>(scorePercentage),
+    };
+  }
+
+  QuizResult copyWith({
+    int? id,
+    DateTime? timestamp,
+    int? userId,
+    String? userName,
+    int? legislatureId,
+    String? quizModeId,
+    double? filterPercentage,
+    double? scorePercentage,
+  }) => QuizResult(
+    id: id ?? this.id,
+    timestamp: timestamp ?? this.timestamp,
+    userId: userId ?? this.userId,
+    userName: userName ?? this.userName,
+    legislatureId: legislatureId ?? this.legislatureId,
+    quizModeId: quizModeId ?? this.quizModeId,
+    filterPercentage: filterPercentage ?? this.filterPercentage,
+    scorePercentage: scorePercentage ?? this.scorePercentage,
+  );
+  QuizResult copyWithCompanion(QuizResultsCompanion data) {
+    return QuizResult(
+      id: data.id.present ? data.id.value : this.id,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      userName: data.userName.present ? data.userName.value : this.userName,
+      legislatureId: data.legislatureId.present
+          ? data.legislatureId.value
+          : this.legislatureId,
+      quizModeId: data.quizModeId.present
+          ? data.quizModeId.value
+          : this.quizModeId,
+      filterPercentage: data.filterPercentage.present
+          ? data.filterPercentage.value
+          : this.filterPercentage,
+      scorePercentage: data.scorePercentage.present
+          ? data.scorePercentage.value
+          : this.scorePercentage,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuizResult(')
+          ..write('id: $id, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('userId: $userId, ')
+          ..write('userName: $userName, ')
+          ..write('legislatureId: $legislatureId, ')
+          ..write('quizModeId: $quizModeId, ')
+          ..write('filterPercentage: $filterPercentage, ')
+          ..write('scorePercentage: $scorePercentage')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    timestamp,
+    userId,
+    userName,
+    legislatureId,
+    quizModeId,
+    filterPercentage,
+    scorePercentage,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuizResult &&
+          other.id == this.id &&
+          other.timestamp == this.timestamp &&
+          other.userId == this.userId &&
+          other.userName == this.userName &&
+          other.legislatureId == this.legislatureId &&
+          other.quizModeId == this.quizModeId &&
+          other.filterPercentage == this.filterPercentage &&
+          other.scorePercentage == this.scorePercentage);
+}
+
+class QuizResultsCompanion extends UpdateCompanion<QuizResult> {
+  final Value<int> id;
+  final Value<DateTime> timestamp;
+  final Value<int> userId;
+  final Value<String> userName;
+  final Value<int> legislatureId;
+  final Value<String> quizModeId;
+  final Value<double> filterPercentage;
+  final Value<double> scorePercentage;
+  const QuizResultsCompanion({
+    this.id = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.userName = const Value.absent(),
+    this.legislatureId = const Value.absent(),
+    this.quizModeId = const Value.absent(),
+    this.filterPercentage = const Value.absent(),
+    this.scorePercentage = const Value.absent(),
+  });
+  QuizResultsCompanion.insert({
+    this.id = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    required int userId,
+    required String userName,
+    required int legislatureId,
+    required String quizModeId,
+    required double filterPercentage,
+    required double scorePercentage,
+  }) : userId = Value(userId),
+       userName = Value(userName),
+       legislatureId = Value(legislatureId),
+       quizModeId = Value(quizModeId),
+       filterPercentage = Value(filterPercentage),
+       scorePercentage = Value(scorePercentage);
+  static Insertable<QuizResult> custom({
+    Expression<int>? id,
+    Expression<DateTime>? timestamp,
+    Expression<int>? userId,
+    Expression<String>? userName,
+    Expression<int>? legislatureId,
+    Expression<String>? quizModeId,
+    Expression<double>? filterPercentage,
+    Expression<double>? scorePercentage,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (userId != null) 'user_id': userId,
+      if (userName != null) 'user_name': userName,
+      if (legislatureId != null) 'legislature_id': legislatureId,
+      if (quizModeId != null) 'quiz_mode_id': quizModeId,
+      if (filterPercentage != null) 'filter_percentage': filterPercentage,
+      if (scorePercentage != null) 'score_percentage': scorePercentage,
+    });
+  }
+
+  QuizResultsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? timestamp,
+    Value<int>? userId,
+    Value<String>? userName,
+    Value<int>? legislatureId,
+    Value<String>? quizModeId,
+    Value<double>? filterPercentage,
+    Value<double>? scorePercentage,
+  }) {
+    return QuizResultsCompanion(
+      id: id ?? this.id,
+      timestamp: timestamp ?? this.timestamp,
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      legislatureId: legislatureId ?? this.legislatureId,
+      quizModeId: quizModeId ?? this.quizModeId,
+      filterPercentage: filterPercentage ?? this.filterPercentage,
+      scorePercentage: scorePercentage ?? this.scorePercentage,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (userName.present) {
+      map['user_name'] = Variable<String>(userName.value);
+    }
+    if (legislatureId.present) {
+      map['legislature_id'] = Variable<int>(legislatureId.value);
+    }
+    if (quizModeId.present) {
+      map['quiz_mode_id'] = Variable<String>(quizModeId.value);
+    }
+    if (filterPercentage.present) {
+      map['filter_percentage'] = Variable<double>(filterPercentage.value);
+    }
+    if (scorePercentage.present) {
+      map['score_percentage'] = Variable<double>(scorePercentage.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuizResultsCompanion(')
+          ..write('id: $id, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('userId: $userId, ')
+          ..write('userName: $userName, ')
+          ..write('legislatureId: $legislatureId, ')
+          ..write('quizModeId: $quizModeId, ')
+          ..write('filterPercentage: $filterPercentage, ')
+          ..write('scorePercentage: $scorePercentage')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2171,6 +2695,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $MembersTable members = $MembersTable(this);
   late final $FsrsReviewsTable fsrsReviews = $FsrsReviewsTable(this);
+  late final $QuizResultsTable quizResults = $QuizResultsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2180,6 +2705,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     profiles,
     members,
     fsrsReviews,
+    quizResults,
   ];
 }
 
@@ -2241,6 +2767,27 @@ final class $$LegislaturesTableReferences
     ).filter((f) => f.legislatureId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_membersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$QuizResultsTable, List<QuizResult>>
+  _quizResultsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.quizResults,
+    aliasName: $_aliasNameGenerator(
+      db.legislatures.id,
+      db.quizResults.legislatureId,
+    ),
+  );
+
+  $$QuizResultsTableProcessedTableManager get quizResultsRefs {
+    final manager = $$QuizResultsTableTableManager(
+      $_db,
+      $_db.quizResults,
+    ).filter((f) => f.legislatureId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_quizResultsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2317,6 +2864,31 @@ class $$LegislaturesTableFilterComposer
           }) => $$MembersTableFilterComposer(
             $db: $db,
             $table: $db.members,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> quizResultsRefs(
+    Expression<bool> Function($$QuizResultsTableFilterComposer f) f,
+  ) {
+    final $$QuizResultsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.quizResults,
+      getReferencedColumn: (t) => t.legislatureId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuizResultsTableFilterComposer(
+            $db: $db,
+            $table: $db.quizResults,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2431,6 +3003,31 @@ class $$LegislaturesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> quizResultsRefs<T extends Object>(
+    Expression<T> Function($$QuizResultsTableAnnotationComposer a) f,
+  ) {
+    final $$QuizResultsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.quizResults,
+      getReferencedColumn: (t) => t.legislatureId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuizResultsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.quizResults,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LegislaturesTableTableManager
@@ -2446,7 +3043,11 @@ class $$LegislaturesTableTableManager
           $$LegislaturesTableUpdateCompanionBuilder,
           (Legislature, $$LegislaturesTableReferences),
           Legislature,
-          PrefetchHooks Function({bool profilesRefs, bool membersRefs})
+          PrefetchHooks Function({
+            bool profilesRefs,
+            bool membersRefs,
+            bool quizResultsRefs,
+          })
         > {
   $$LegislaturesTableTableManager(_$AppDatabase db, $LegislaturesTable table)
     : super(
@@ -2491,62 +3092,89 @@ class $$LegislaturesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({profilesRefs = false, membersRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (profilesRefs) db.profiles,
-                if (membersRefs) db.members,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (profilesRefs)
-                    await $_getPrefetchedData<
-                      Legislature,
-                      $LegislaturesTable,
-                      Profile
-                    >(
-                      currentTable: table,
-                      referencedTable: $$LegislaturesTableReferences
-                          ._profilesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$LegislaturesTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).profilesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.lastLegislatureId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (membersRefs)
-                    await $_getPrefetchedData<
-                      Legislature,
-                      $LegislaturesTable,
-                      Member
-                    >(
-                      currentTable: table,
-                      referencedTable: $$LegislaturesTableReferences
-                          ._membersRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$LegislaturesTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).membersRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.legislatureId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({
+                profilesRefs = false,
+                membersRefs = false,
+                quizResultsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (profilesRefs) db.profiles,
+                    if (membersRefs) db.members,
+                    if (quizResultsRefs) db.quizResults,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (profilesRefs)
+                        await $_getPrefetchedData<
+                          Legislature,
+                          $LegislaturesTable,
+                          Profile
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LegislaturesTableReferences
+                              ._profilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LegislaturesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).profilesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.lastLegislatureId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (membersRefs)
+                        await $_getPrefetchedData<
+                          Legislature,
+                          $LegislaturesTable,
+                          Member
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LegislaturesTableReferences
+                              ._membersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LegislaturesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).membersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.legislatureId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (quizResultsRefs)
+                        await $_getPrefetchedData<
+                          Legislature,
+                          $LegislaturesTable,
+                          QuizResult
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LegislaturesTableReferences
+                              ._quizResultsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LegislaturesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).quizResultsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.legislatureId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -2563,7 +3191,11 @@ typedef $$LegislaturesTableProcessedTableManager =
       $$LegislaturesTableUpdateCompanionBuilder,
       (Legislature, $$LegislaturesTableReferences),
       Legislature,
-      PrefetchHooks Function({bool profilesRefs, bool membersRefs})
+      PrefetchHooks Function({
+        bool profilesRefs,
+        bool membersRefs,
+        bool quizResultsRefs,
+      })
     >;
 typedef $$ProfilesTableCreateCompanionBuilder =
     ProfilesCompanion Function({
@@ -2620,6 +3252,24 @@ final class $$ProfilesTableReferences
     ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_fsrsReviewsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$QuizResultsTable, List<QuizResult>>
+  _quizResultsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.quizResults,
+    aliasName: $_aliasNameGenerator(db.profiles.id, db.quizResults.userId),
+  );
+
+  $$QuizResultsTableProcessedTableManager get quizResultsRefs {
+    final manager = $$QuizResultsTableTableManager(
+      $_db,
+      $_db.quizResults,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_quizResultsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2699,6 +3349,31 @@ class $$ProfilesTableFilterComposer
           }) => $$FsrsReviewsTableFilterComposer(
             $db: $db,
             $table: $db.fsrsReviews,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> quizResultsRefs(
+    Expression<bool> Function($$QuizResultsTableFilterComposer f) f,
+  ) {
+    final $$QuizResultsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.quizResults,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuizResultsTableFilterComposer(
+            $db: $db,
+            $table: $db.quizResults,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2840,6 +3515,31 @@ class $$ProfilesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> quizResultsRefs<T extends Object>(
+    Expression<T> Function($$QuizResultsTableAnnotationComposer a) f,
+  ) {
+    final $$QuizResultsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.quizResults,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuizResultsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.quizResults,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProfilesTableTableManager
@@ -2855,7 +3555,11 @@ class $$ProfilesTableTableManager
           $$ProfilesTableUpdateCompanionBuilder,
           (Profile, $$ProfilesTableReferences),
           Profile,
-          PrefetchHooks Function({bool lastLegislatureId, bool fsrsReviewsRefs})
+          PrefetchHooks Function({
+            bool lastLegislatureId,
+            bool fsrsReviewsRefs,
+            bool quizResultsRefs,
+          })
         > {
   $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
     : super(
@@ -2909,11 +3613,16 @@ class $$ProfilesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({lastLegislatureId = false, fsrsReviewsRefs = false}) {
+              ({
+                lastLegislatureId = false,
+                fsrsReviewsRefs = false,
+                quizResultsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (fsrsReviewsRefs) db.fsrsReviews,
+                    if (quizResultsRefs) db.quizResults,
                   ],
                   addJoins:
                       <
@@ -2970,6 +3679,27 @@ class $$ProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (quizResultsRefs)
+                        await $_getPrefetchedData<
+                          Profile,
+                          $ProfilesTable,
+                          QuizResult
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences
+                              ._quizResultsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).quizResultsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -2990,7 +3720,11 @@ typedef $$ProfilesTableProcessedTableManager =
       $$ProfilesTableUpdateCompanionBuilder,
       (Profile, $$ProfilesTableReferences),
       Profile,
-      PrefetchHooks Function({bool lastLegislatureId, bool fsrsReviewsRefs})
+      PrefetchHooks Function({
+        bool lastLegislatureId,
+        bool fsrsReviewsRefs,
+        bool quizResultsRefs,
+      })
     >;
 typedef $$MembersTableCreateCompanionBuilder =
     MembersCompanion Function({
@@ -4077,6 +4811,468 @@ typedef $$FsrsReviewsTableProcessedTableManager =
       FsrsReview,
       PrefetchHooks Function({bool userId, bool memberId})
     >;
+typedef $$QuizResultsTableCreateCompanionBuilder =
+    QuizResultsCompanion Function({
+      Value<int> id,
+      Value<DateTime> timestamp,
+      required int userId,
+      required String userName,
+      required int legislatureId,
+      required String quizModeId,
+      required double filterPercentage,
+      required double scorePercentage,
+    });
+typedef $$QuizResultsTableUpdateCompanionBuilder =
+    QuizResultsCompanion Function({
+      Value<int> id,
+      Value<DateTime> timestamp,
+      Value<int> userId,
+      Value<String> userName,
+      Value<int> legislatureId,
+      Value<String> quizModeId,
+      Value<double> filterPercentage,
+      Value<double> scorePercentage,
+    });
+
+final class $$QuizResultsTableReferences
+    extends BaseReferences<_$AppDatabase, $QuizResultsTable, QuizResult> {
+  $$QuizResultsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProfilesTable _userIdTable(_$AppDatabase db) => db.profiles
+      .createAlias($_aliasNameGenerator(db.quizResults.userId, db.profiles.id));
+
+  $$ProfilesTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<int>('user_id')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LegislaturesTable _legislatureIdTable(_$AppDatabase db) =>
+      db.legislatures.createAlias(
+        $_aliasNameGenerator(db.quizResults.legislatureId, db.legislatures.id),
+      );
+
+  $$LegislaturesTableProcessedTableManager get legislatureId {
+    final $_column = $_itemColumn<int>('legislature_id')!;
+
+    final manager = $$LegislaturesTableTableManager(
+      $_db,
+      $_db.legislatures,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_legislatureIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$QuizResultsTableFilterComposer
+    extends Composer<_$AppDatabase, $QuizResultsTable> {
+  $$QuizResultsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userName => $composableBuilder(
+    column: $table.userName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quizModeId => $composableBuilder(
+    column: $table.quizModeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get filterPercentage => $composableBuilder(
+    column: $table.filterPercentage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get scorePercentage => $composableBuilder(
+    column: $table.scorePercentage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProfilesTableFilterComposer get userId {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LegislaturesTableFilterComposer get legislatureId {
+    final $$LegislaturesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.legislatureId,
+      referencedTable: $db.legislatures,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LegislaturesTableFilterComposer(
+            $db: $db,
+            $table: $db.legislatures,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuizResultsTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuizResultsTable> {
+  $$QuizResultsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userName => $composableBuilder(
+    column: $table.userName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quizModeId => $composableBuilder(
+    column: $table.quizModeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get filterPercentage => $composableBuilder(
+    column: $table.filterPercentage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get scorePercentage => $composableBuilder(
+    column: $table.scorePercentage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProfilesTableOrderingComposer get userId {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LegislaturesTableOrderingComposer get legislatureId {
+    final $$LegislaturesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.legislatureId,
+      referencedTable: $db.legislatures,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LegislaturesTableOrderingComposer(
+            $db: $db,
+            $table: $db.legislatures,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuizResultsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuizResultsTable> {
+  $$QuizResultsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<String> get userName =>
+      $composableBuilder(column: $table.userName, builder: (column) => column);
+
+  GeneratedColumn<String> get quizModeId => $composableBuilder(
+    column: $table.quizModeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get filterPercentage => $composableBuilder(
+    column: $table.filterPercentage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get scorePercentage => $composableBuilder(
+    column: $table.scorePercentage,
+    builder: (column) => column,
+  );
+
+  $$ProfilesTableAnnotationComposer get userId {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LegislaturesTableAnnotationComposer get legislatureId {
+    final $$LegislaturesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.legislatureId,
+      referencedTable: $db.legislatures,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LegislaturesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.legislatures,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuizResultsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuizResultsTable,
+          QuizResult,
+          $$QuizResultsTableFilterComposer,
+          $$QuizResultsTableOrderingComposer,
+          $$QuizResultsTableAnnotationComposer,
+          $$QuizResultsTableCreateCompanionBuilder,
+          $$QuizResultsTableUpdateCompanionBuilder,
+          (QuizResult, $$QuizResultsTableReferences),
+          QuizResult,
+          PrefetchHooks Function({bool userId, bool legislatureId})
+        > {
+  $$QuizResultsTableTableManager(_$AppDatabase db, $QuizResultsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuizResultsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuizResultsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuizResultsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> userId = const Value.absent(),
+                Value<String> userName = const Value.absent(),
+                Value<int> legislatureId = const Value.absent(),
+                Value<String> quizModeId = const Value.absent(),
+                Value<double> filterPercentage = const Value.absent(),
+                Value<double> scorePercentage = const Value.absent(),
+              }) => QuizResultsCompanion(
+                id: id,
+                timestamp: timestamp,
+                userId: userId,
+                userName: userName,
+                legislatureId: legislatureId,
+                quizModeId: quizModeId,
+                filterPercentage: filterPercentage,
+                scorePercentage: scorePercentage,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                required int userId,
+                required String userName,
+                required int legislatureId,
+                required String quizModeId,
+                required double filterPercentage,
+                required double scorePercentage,
+              }) => QuizResultsCompanion.insert(
+                id: id,
+                timestamp: timestamp,
+                userId: userId,
+                userName: userName,
+                legislatureId: legislatureId,
+                quizModeId: quizModeId,
+                filterPercentage: filterPercentage,
+                scorePercentage: scorePercentage,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuizResultsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userId = false, legislatureId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (userId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.userId,
+                                referencedTable: $$QuizResultsTableReferences
+                                    ._userIdTable(db),
+                                referencedColumn: $$QuizResultsTableReferences
+                                    ._userIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (legislatureId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.legislatureId,
+                                referencedTable: $$QuizResultsTableReferences
+                                    ._legislatureIdTable(db),
+                                referencedColumn: $$QuizResultsTableReferences
+                                    ._legislatureIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$QuizResultsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuizResultsTable,
+      QuizResult,
+      $$QuizResultsTableFilterComposer,
+      $$QuizResultsTableOrderingComposer,
+      $$QuizResultsTableAnnotationComposer,
+      $$QuizResultsTableCreateCompanionBuilder,
+      $$QuizResultsTableUpdateCompanionBuilder,
+      (QuizResult, $$QuizResultsTableReferences),
+      QuizResult,
+      PrefetchHooks Function({bool userId, bool legislatureId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4089,4 +5285,6 @@ class $AppDatabaseManager {
       $$MembersTableTableManager(_db, _db.members);
   $$FsrsReviewsTableTableManager get fsrsReviews =>
       $$FsrsReviewsTableTableManager(_db, _db.fsrsReviews);
+  $$QuizResultsTableTableManager get quizResults =>
+      $$QuizResultsTableTableManager(_db, _db.quizResults);
 }

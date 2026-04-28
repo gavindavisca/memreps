@@ -238,5 +238,32 @@ class Repository {
     return results.map((row) => row.readTable(db.members)).toList();
   }
 
+  Future<void> saveQuizResult({
+    required int userId,
+    required String userName,
+    required int legislatureId,
+    required String quizModeId,
+    required double filterPercentage,
+    required double scorePercentage,
+  }) async {
+    await db.into(db.quizResults).insert(
+      QuizResultsCompanion.insert(
+        userId: userId,
+        userName: userName,
+        legislatureId: legislatureId,
+        quizModeId: quizModeId,
+        filterPercentage: filterPercentage,
+        scorePercentage: scorePercentage,
+        timestamp: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<List<QuizResult>> getQuizResults(int userId) {
+    return (db.select(db.quizResults)
+          ..where((tbl) => tbl.userId.equals(userId))
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.timestamp)]))
+        .get();
+  }
 }
 

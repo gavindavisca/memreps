@@ -56,12 +56,23 @@ class FsrsReviews extends Table {
   List<Set<Column>> get uniqueKeys => [{userId, memberId}];
 }
 
-@DriftDatabase(tables: [Profiles, Legislatures, Members, FsrsReviews])
+class QuizResults extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get userId => integer().references(Profiles, #id)();
+  TextColumn get userName => text()();
+  IntColumn get legislatureId => integer().references(Legislatures, #id)();
+  TextColumn get quizModeId => text()(); // short name id
+  RealColumn get filterPercentage => real()();
+  RealColumn get scorePercentage => real()();
+}
+
+@DriftDatabase(tables: [Profiles, Legislatures, Members, FsrsReviews, QuizResults])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(impl.connect());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration {
@@ -82,6 +93,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 8) {
           // No structural changes, just seeding updated slugs
+        }
+        if (from < 9) {
+          await m.createTable(quizResults);
         }
         
         await _seedLegislatures();
