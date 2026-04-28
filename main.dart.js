@@ -104708,7 +104708,7 @@ $1(a){return new A.dn(a.a,a.b,null,null)},
 $S:691}
 A.Td.prototype={
 J(a){var s=null,r=this.c
-if(r.length!==0)r="/proxy?url="+A.AO(2,r,B.aa,!1)
+if(r.length!==0)r="https://proxyimage-wq27mxu42a-uc.a.run.app?url="+A.AO(2,r,B.aa,!1)
 return new A.C3(new A.mB(s,r,s,1,s,s,s,s,B.KR),r,new A.amo(),new A.amp(),s,s,this.f,this.r,s)}}
 A.amo.prototype={
 $2(a,b){var s=null,r=A.U(a).ax,q=r.RG
