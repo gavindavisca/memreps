@@ -16,7 +16,7 @@ class MemberWithStats {
 
 class Repository {
   final AppDatabase db;
-  final fsrs.FSRS scheduler = fsrs.FSRS();
+  final fsrs.Scheduler scheduler = fsrs.Scheduler();
 
   Repository(this.db);
 
@@ -182,35 +182,40 @@ class Repository {
   Future<void> submitReview(int userId, int memberId, fsrs.Rating rating) async {
     final currentReview = await getReviewState(userId, memberId);
     
-    fsrs.Card card = fsrs.Card();
+    fsrs.Card card;
     if (currentReview != null) {
-      card = fsrs.Card()
-        ..state = fsrs.State.values[currentReview.state]
-        ..due = currentReview.due
-        ..stability = currentReview.stability
-        ..difficulty = currentReview.difficulty
-        ..elapsedDays = currentReview.elapsedDays
-        ..scheduledDays = currentReview.scheduledDays
-        ..reps = currentReview.reps
-        ..lapses = currentReview.lapses
-        ..lastReview = currentReview.lastReview ?? DateTime.now();
+      card = fsrs.Card.fromMap({
+        'cardId': memberId,
+        'state': currentReview.state,
+        'due': currentReview.due.toIso8601String(),
+        'stability': currentReview.stability,
+        'difficulty': currentReview.difficulty,
+        'elapsedDays': currentReview.elapsedDays,
+        'scheduledDays': currentReview.scheduledDays,
+        'reps': currentReview.reps,
+        'lapses': currentReview.lapses,
+        'lastReview': (currentReview.lastReview ?? DateTime.now()).toIso8601String(),
+      });
+    } else {
+      card = fsrs.Card(cardId: memberId);
     }
 
-    final schedulingCards = scheduler.repeat(card, DateTime.now());
-    final nextCard = schedulingCards[rating]!.card;
+    final reviewResult = scheduler.reviewCard(card, rating);
+    final nextCard = reviewResult.card;
+    final nextCardMap = nextCard.toMap();
 
     final companion = FsrsReviewsCompanion.insert(
       userId: userId,
       memberId: memberId,
-      state: nextCard.state.index,
-      due: nextCard.due,
-      stability: nextCard.stability,
-      difficulty: nextCard.difficulty,
-      elapsedDays: nextCard.elapsedDays,
-      scheduledDays: nextCard.scheduledDays,
-      reps: nextCard.reps,
-      lapses: nextCard.lapses,
-      lastReview: Value(nextCard.lastReview),
+      state: (nextCardMap['state'] as int),
+      due: DateTime.parse(nextCardMap['due'] as String),
+      stability: (nextCardMap['stability'] as num).toDouble(),
+      difficulty: (nextCardMap['difficulty'] as num).toDouble(),
+      elapsedDays: (nextCardMap['elapsedDays'] as int),
+      scheduledDays: (nextCardMap['scheduledDays'] as int),
+      reps: (nextCardMap['reps'] as int),
+      lapses: (nextCardMap['lapses'] as int),
+      lastReview: Value(DateTime.parse(nextCardMap['lastReview'] as String)),
       totalQuestions: Value((currentReview?.totalQuestions ?? 0) + 1),
       correctQuestions: Value((currentReview?.correctQuestions ?? 0) + (rating != fsrs.Rating.again ? 1 : 0)),
     );

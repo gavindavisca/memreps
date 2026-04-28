@@ -23,9 +23,14 @@ class MemberImage extends StatelessWidget {
     String finalUrl = imageUrl;
     
     if (kIsWeb && imageUrl.isNotEmpty) {
-      // Use images.weserv.nl as a reliable, CORS-friendly image proxy for web.
-      // This bypasses browser restrictions on government image sources.
-      finalUrl = 'https://images.weserv.nl/?url=${Uri.encodeComponent(imageUrl)}';
+      if (kDebugMode) {
+        // In local development, the relative /proxy path doesn't exist on the Flutter dev server.
+        // We point directly to the local Functions emulator instead.
+        finalUrl = 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/proxyImage?url=${Uri.encodeComponent(imageUrl)}';
+      } else {
+        // In production, Firebase Hosting rewrites /proxy to the Cloud Function.
+        finalUrl = '/proxy?url=${Uri.encodeComponent(imageUrl)}';
+      }
     }
 
     return CachedNetworkImage(

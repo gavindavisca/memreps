@@ -1,7 +1,4 @@
-// This file uses conditional exports to isolate platform-specific database 
-// implementations. This is crucial for WASM builds, which strictly forbid 
-// any reach into libraries that use 'dart:ffi' (like sqlite3 native).
+// This file isolates the platform-specific database implementation.
+// As the app is now web-only, it directly exports the web implementation.
 
-export 'unsupported.dart'
-  if (dart.library.ffi) 'native.dart'
-  if (dart.library.js_interop) 'web.dart';
+export 'web.dart';

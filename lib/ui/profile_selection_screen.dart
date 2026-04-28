@@ -5,6 +5,7 @@ import '../logic/repository.dart';
 import '../data/database.dart';
 import '../logic/l10n.dart';
 import '../logic/scraper_service.dart';
+import '../logic/recaptcha_service.dart';
 
 class ProfileSelectionScreen extends StatefulWidget {
   const ProfileSelectionScreen({super.key});
@@ -21,6 +22,9 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
   Legislature? _selectedLegislature;
   List<Legislature> _legislatures = [];
   Future<List<Profile>>? _profilesFuture;
+  bool _isVerified = false;
+  bool _isVerifying = false;
+  final String _siteKey = '6Lf07s4sAAAAALoVLAHH-cTu37py7XhutcCPsFUR';
 
   @override
   void initState() {
@@ -37,6 +41,31 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
         });
       }
     });
+    _initRecaptcha();
+  }
+
+  Future<void> _initRecaptcha() async {
+    // Enterprise script is already loaded in index.html
+    debugPrint('Recaptcha Enterprise service ready');
+  }
+
+  Future<void> _verifyHuman() async {
+    setState(() => _isVerifying = true);
+    try {
+      final token = await RecaptchaService.execute(_siteKey, 'onboarding');
+      if (token != null && token.isNotEmpty) {
+        setState(() => _isVerified = true);
+      }
+    } catch (e) {
+      debugPrint('Recaptcha Enterprise verification failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification failed: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isVerifying = false);
+    }
   }
 
   void _determineDefaultLanguage() {
@@ -202,9 +231,24 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
             )).toList(),
             onChanged: (val) => setState(() => _selectedLegislature = val),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          if (!_isVerified) ...[
+            OutlinedButton.icon(
+              onPressed: _isVerifying ? null : _verifyHuman,
+              icon: _isVerifying 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.security),
+              label: Text(_isVerifying ? 'Verifying...' : 'Verify you are human'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                minimumSize: const Size.fromHeight(56),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           ElevatedButton(
-            onPressed: _nameController.text.trim().isEmpty ? null : () => _createProfile(appState),
+            onPressed: (_nameController.text.trim().isEmpty || !_isVerified) ? null : () => _createProfile(appState),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size.fromHeight(56),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
