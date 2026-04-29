@@ -8,7 +8,6 @@ import '../logic/repository.dart';
 import '../logic/quiz_service.dart';
 import '../logic/l10n.dart';
 import '../data/database.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'widgets/member_image.dart';
 
 import 'package:fsrs/fsrs.dart' as fsrs;
@@ -301,7 +300,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 onPressed: _isAnswered ? null : () => _handleAnswer(option),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
-                  backgroundColor: color?.withOpacity(0.1),
+                  backgroundColor: color?.withValues(alpha: 0.1),
                   side: color != null ? BorderSide(color: color, width: 2) : null,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
@@ -356,7 +355,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         _handleAnswer(_textController.text);
                       }
                     },
-                    selectedColor: chipColor?.withOpacity(0.2) ?? Theme.of(context).colorScheme.primaryContainer,
+                    selectedColor: chipColor?.withValues(alpha: 0.2) ?? Theme.of(context).colorScheme.primaryContainer,
                     side: chipColor != null ? BorderSide(color: chipColor) : null,
                   );
                 }).toList(),
@@ -502,6 +501,7 @@ class _QuizScreenState extends State<QuizScreen> {
         body: jsonEncode({
           'userUuid': profile.uuid,
           'userName': profile.firstName,
+          'legislatureId': leg.id,
           'legislatureName': leg.name,
           'quizModeId': _getModeKey(),
           'filterPercentage': _filterPercentage,

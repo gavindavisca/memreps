@@ -100,20 +100,4 @@ class ScraperService {
 
     return null;
   }
-
-  Future<List<MembersCompanion>> _fetchMockSenate() async {
-    // Placeholder for Senate until a reliable source is found
-    return [
-      const MembersCompanion(
-        firstName: Value('Raymond'),
-        lastName: Value('Saint-Germain'),
-        riding: Value('Quebec'),
-        party: Value('Independent Senators Group'),
-        imageUrl: Value('https://sencanada.ca/media/366363/sen_saint-germain_raymonde_001_800.jpg'),
-        title: Value('Senator'),
-        region: Value('Quebec'),
-      ),
-      // Add more or implement real scraper
-    ];
-  }
 }

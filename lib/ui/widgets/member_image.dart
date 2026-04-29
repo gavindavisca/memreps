@@ -40,7 +40,7 @@ class MemberImage extends StatelessWidget {
       fit: fit,
       alignment: alignment,
       placeholder: (context, url) => Container(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
         child: const Center(
           child: SizedBox(
             width: 40,
@@ -50,7 +50,7 @@ class MemberImage extends StatelessWidget {
         ),
       ),
       errorWidget: (context, url, error) => Container(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
         child: const Icon(Icons.person, size: 40, color: Colors.grey),
       ),
     );

@@ -4,7 +4,6 @@ import '../logic/app_state.dart';
 import '../logic/repository.dart';
 import '../data/database.dart';
 import '../logic/l10n.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'widgets/member_image.dart';
 
 
@@ -45,14 +44,14 @@ class _BrowseScreenState extends State<BrowseScreen> {
         break;
       case SortOption.leastMemorized:
         items.sort((a, b) {
-          final hasQ_A = a.review != null && a.review!.totalQuestions > 0;
-          final hasQ_B = b.review != null && b.review!.totalQuestions > 0;
-          final allCorrA = hasQ_A && a.review!.correctQuestions == a.review!.totalQuestions;
-          final allCorrB = hasQ_B && b.review!.correctQuestions == b.review!.totalQuestions;
+          final hasStatsA = a.review != null && a.review!.totalQuestions > 0;
+          final hasStatsB = b.review != null && b.review!.totalQuestions > 0;
+          final allCorrA = hasStatsA && a.review!.correctQuestions == a.review!.totalQuestions;
+          final allCorrB = hasStatsB && b.review!.correctQuestions == b.review!.totalQuestions;
           
           // Rank: 0 = Has errors, 1 = Unanswered, 2 = All correct
-          final rankA = !hasQ_A ? 1 : (allCorrA ? 2 : 0);
-          final rankB = !hasQ_B ? 1 : (allCorrB ? 2 : 0);
+          final rankA = !hasStatsA ? 1 : (allCorrA ? 2 : 0);
+          final rankB = !hasStatsB ? 1 : (allCorrB ? 2 : 0);
 
           if (rankA != rankB) return rankA.compareTo(rankB);
           
@@ -65,14 +64,14 @@ class _BrowseScreenState extends State<BrowseScreen> {
         break;
       case SortOption.mostMemorized:
         items.sort((a, b) {
-          final hasQ_A = a.review != null && a.review!.totalQuestions > 0;
-          final hasQ_B = b.review != null && b.review!.totalQuestions > 0;
-          final allCorrA = hasQ_A && a.review!.correctQuestions == a.review!.totalQuestions;
-          final allCorrB = hasQ_B && b.review!.correctQuestions == b.review!.totalQuestions;
+          final hasStatsA = a.review != null && a.review!.totalQuestions > 0;
+          final hasStatsB = b.review != null && b.review!.totalQuestions > 0;
+          final allCorrA = hasStatsA && a.review!.correctQuestions == a.review!.totalQuestions;
+          final allCorrB = hasStatsB && b.review!.correctQuestions == b.review!.totalQuestions;
 
           // Rank: 0 = All correct, 1 = Partial correct, 2 = Unanswered
-          final rankA = allCorrA ? 0 : (hasQ_A ? 1 : 2);
-          final rankB = allCorrB ? 0 : (hasQ_B ? 1 : 2);
+          final rankA = allCorrA ? 0 : (hasStatsA ? 1 : 2);
+          final rankB = allCorrB ? 0 : (hasStatsB ? 1 : 2);
 
           if (rankA != rankB) return rankA.compareTo(rankB);
 
@@ -211,7 +210,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
 
         return Container(
           padding: const EdgeInsets.all(16),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -284,6 +283,11 @@ class _BrowseScreenState extends State<BrowseScreen> {
                     alignment: Alignment.topCenter,
                   ),
                 ),
+                if (Provider.of<AppState>(context, listen: false).currentLegislature != null)
+                  Container(
+                    height: 5,
+                    color: _getPartyColor(member.party),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -318,7 +322,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getPercentageColor(percentage).withOpacity(0.8),
+                    color: _getPercentageColor(percentage).withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -341,5 +345,30 @@ class _BrowseScreenState extends State<BrowseScreen> {
     if (percentage >= 80) return Colors.green;
     if (percentage >= 50) return Colors.orange;
     return Colors.red;
+  }
+
+  Color _getPartyColor(String? party) {
+    if (party == null) return Colors.grey;
+    final p = party.toLowerCase();
+    
+    // Independents
+    if (p.contains('independent') || p.contains('indépendant')) return Colors.grey;
+    
+    // Standard Canadian Colors
+    if (p.contains('liberal') || p.contains('libéral')) return const Color(0xFFD71920);
+    if (p.contains('conservative') || p.contains('progressiste-conservateur') || p.contains('pc party') || p.contains('united conservative')) return const Color(0xFF1A4782);
+    if (p.contains('ndp') || p.contains('nouveau parti démocratique') || p.contains('new democratic')) return const Color(0xFFF37021);
+    if (p.contains('green') || p.contains('vert')) return const Color(0xFF3D9B35);
+    
+    // Quebec Specific
+    if (p.contains('coalition avenir') || p.contains('caq')) return const Color(0xFF00AAEC);
+    if (p.contains('parti québécois')) return const Color(0xFF004C97);
+    if (p.contains('québec solidaire')) return const Color(0xFFFF5C39);
+    
+    // Saskatchewan
+    if (p.contains('saskatchewan party')) return const Color(0xFF006A4E);
+
+    // Default
+    return Colors.grey;
   }
 }

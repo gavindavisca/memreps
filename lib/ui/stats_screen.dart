@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -109,20 +112,30 @@ class _StatsScreenState extends State<StatsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.get(modeId),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l10n.get(modeId),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.emoji_events_rounded, color: Colors.amber),
+                  onPressed: () => _showLeaderboard(context, modeId),
+                  tooltip: 'Leaderboard',
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
             SizedBox(
-              height: 80,
+              height: 100,
               child: LineChart(
                 LineChartData(
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       strokeWidth: 1,
                     ),
                   ),
@@ -158,7 +171,7 @@ class _StatsScreenState extends State<StatsScreen> {
                       dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       ),
                     ),
                   ],
@@ -169,5 +182,123 @@ class _StatsScreenState extends State<StatsScreen> {
         ),
       ),
     );
+  }
+
+  void _showLeaderboard(BuildContext context, String modeId) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final l10n = appState.l10n;
+    final legId = appState.currentLegislature!.id.toString();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.emoji_events_rounded, color: Colors.amber),
+            const SizedBox(width: 12),
+            Expanded(child: Text('${l10n.get(modeId)} Leaderboard')),
+          ],
+        ),
+        content: FutureBuilder<List<dynamic>>(
+          future: _fetchLeaderboard(legId, modeId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (snapshot.hasError || !snapshot.hasData) {
+              return const SizedBox(
+                height: 100,
+                child: Center(child: Text('Failed to load leaderboard.')),
+              );
+            }
+
+            final entries = snapshot.data!;
+            if (entries.isEmpty) {
+              return const SizedBox(
+                height: 100,
+                child: Center(child: Text('No results yet this week.')),
+              );
+            }
+
+            return SizedBox(
+              width: double.maxFinite,
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: entries.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final entry = entries[index];
+                  final name = entry['name'] as String;
+                  final score = (entry['averageScore'] as num) * 100;
+                  
+                  Widget leading;
+                  if (index == 0) {
+                    leading = const Icon(Icons.workspace_premium, color: Colors.amber);
+                  } else if (index == 1) {
+                    leading = const Icon(Icons.workspace_premium, color: Colors.grey);
+                  } else if (index == 2) {
+                    leading = const Icon(Icons.workspace_premium, color: Colors.brown);
+                  } else {
+                    leading = CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Text('${index + 1}', style: const TextStyle(fontSize: 12)),
+                    );
+                  }
+
+                  return ListTile(
+                    dense: true,
+                    leading: leading,
+                    title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: Text(
+                      '${score.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<dynamic>> _fetchLeaderboard(String legislatureId, String quizModeId) async {
+    final url = kDebugMode 
+      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/getLeaderboard'
+      : 'https://us-central1-openclaw-bot-486015.cloudfunctions.net/getLeaderboard';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'legislatureId': legislatureId,
+          'quizModeId': quizModeId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['leaderboard'] as List<dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error fetching leaderboard: $e');
+    }
+    return [];
   }
 }

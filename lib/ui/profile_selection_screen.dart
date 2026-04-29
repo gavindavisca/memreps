@@ -115,7 +115,6 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final repository = Provider.of<Repository>(context);
     final appState = Provider.of<AppState>(context);
     final l10n = L10n(_selectedLanguage); // Local preview during onboarding
 
@@ -314,7 +313,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                               orElse: () => _legislatures.isNotEmpty ? _legislatures.first : Legislature(id: 0, name: '', openNorthId: '')
                             ).name,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                             ),
                           ),
                       ],
@@ -362,7 +361,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
       );
 
       // 3. Sync to backend
-      await _syncProfileToBackend(profile);
+      await _syncProfileToBackend(profile, _selectedLegislature!);
 
       // 4. Set as current profile (this will transition to Home/Browse)
       await appState.setCurrentProfile(profile);
@@ -376,7 +375,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
     }
   }
 
-  Future<void> _syncProfileToBackend(Profile profile) async {
+  Future<void> _syncProfileToBackend(Profile profile, Legislature leg) async {
     final url = kDebugMode 
       ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncProfile'
       : 'https://syncprofile-wq27mxu42a-uc.a.run.app';
@@ -389,7 +388,8 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
           'uuid': profile.uuid,
           'firstName': profile.firstName,
           'language': profile.language,
-          'lastLegislatureId': profile.lastLegislatureId,
+          'legislatureId': leg.id,
+          'legislatureName': leg.name,
         }),
       );
 

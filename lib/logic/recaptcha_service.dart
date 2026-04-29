@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:js_interop';
 
 @JS('grecaptcha.enterprise')
@@ -17,7 +18,7 @@ class RecaptchaService {
       final result = await promise.toDart;
       return result.toDart;
     } catch (e) {
-      print('Recaptcha Enterprise error: $e');
+      debugPrint('Recaptcha Enterprise error: $e');
       return null;
     }
   }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../logic/app_state.dart';
@@ -99,7 +102,12 @@ class LegislatureSelectionScreen extends StatelessWidget {
       // 3. Update state
       appState.setCurrentLegislature(legislature);
       
-      // 4. Close dialog
+      // 4. Sync to backend if profile exists
+      if (appState.currentProfile != null) {
+        _syncProfileToBackend(appState.currentProfile!, legislature);
+      }
+      
+      // 5. Close dialog
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) {
@@ -108,6 +116,28 @@ class LegislatureSelectionScreen extends StatelessWidget {
           SnackBar(content: Text('Error: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _syncProfileToBackend(Profile profile, Legislature leg) async {
+    final url = kDebugMode 
+      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncProfile'
+      : 'https://syncprofile-wq27mxu42a-uc.a.run.app';
+
+    try {
+      await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'uuid': profile.uuid,
+          'firstName': profile.firstName,
+          'language': profile.language,
+          'legislatureId': leg.id,
+          'legislatureName': leg.name,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Error syncing profile update: $e');
     }
   }
 }

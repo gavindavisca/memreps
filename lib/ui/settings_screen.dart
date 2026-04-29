@@ -1,5 +1,10 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/link.dart';
 import '../logic/app_state.dart';
 import '../logic/repository.dart';
 import '../logic/scraper_service.dart';
@@ -90,7 +95,7 @@ class SettingsScreen extends StatelessWidget {
                               icon: const Icon(Icons.refresh),
                               onPressed: () async {
                                 final confirmed = await _confirmLegAction(context, l10n);
-                                if (confirmed) {
+                                if (confirmed && context.mounted) {
                                   _refreshData(context, leg, repository, scraper, appState);
                                 }
                               },
@@ -114,7 +119,7 @@ class SettingsScreen extends StatelessWidget {
                     leading: const Icon(Icons.swap_horiz),
                     onTap: () async {
                       final confirmed = await _confirmLegAction(context, l10n);
-                      if (confirmed) {
+                      if (confirmed && context.mounted) {
                         appState.setCurrentLegislature(null);
                       }
                     },
@@ -122,6 +127,20 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
+          const SizedBox(height: 48),
+          Center(
+            child: TextButton.icon(
+              onPressed: () => _showCredits(context, l10n),
+              icon: const Icon(Icons.info_rounded, color: Colors.blue),
+              label: Text(
+                l10n.get('credits'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -191,40 +210,28 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.get('language')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('English'),
-              leading: Radio<String>(
+        content: RadioGroup<String>(
+          groupValue: appState.currentProfile!.language,
+          onChanged: (val) {
+            if (val != null) {
+              appState.setLanguage(val);
+              _syncProfileToBackend(appState.currentProfile!, appState.currentLegislature!);
+              Navigator.pop(context);
+            }
+          },
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String>(
+                title: Text('English'),
                 value: 'en',
-                groupValue: appState.currentProfile!.language,
-                onChanged: (val) {
-                  appState.setLanguage('en');
-                  Navigator.pop(context);
-                },
               ),
-              onTap: () {
-                appState.setLanguage('en');
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Français'),
-              leading: Radio<String>(
+              RadioListTile<String>(
+                title: Text('Français'),
                 value: 'fr',
-                groupValue: appState.currentProfile!.language,
-                onChanged: (val) {
-                  appState.setLanguage('fr');
-                  Navigator.pop(context);
-                },
               ),
-              onTap: () {
-                appState.setLanguage('fr');
-                Navigator.pop(context);
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -260,6 +267,7 @@ class SettingsScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Data refreshed successfully.')),
         );
+        _syncProfileToBackend(appState.currentProfile!, legislature);
         appState.setTabIndex(0);
       }
     } catch (e) {
@@ -269,6 +277,118 @@ class SettingsScreen extends StatelessWidget {
           SnackBar(content: Text('Refresh failed: $e')),
         );
       }
+    }
+  }
+
+  void _showCredits(BuildContext context, L10n l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: Colors.blue),
+            const SizedBox(width: 12),
+            Text(l10n.get('credits')),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.get('credits_data_web'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                children: [
+                  Text(l10n.get('credits_opennorth_pre')),
+                  Link(
+                    uri: Uri.parse('https://represent.opennorth.ca/'),
+                    builder: (context, followLink) => GestureDetector(
+                      onTap: followLink,
+                      child: Text(
+                        l10n.get('credits_opennorth_link'),
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(l10n.get('credits_opennorth_post')),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.get('credits_legislatures'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(l10n.get('credits_legislatures_desc')),
+              const SizedBox(height: 12),
+              Text(
+                l10n.get('credits_thanks'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(l10n.get('credits_team')),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Text(
+                l10n.get('credits_feedback'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Link(
+                uri: Uri.parse('mailto:guydavis.ca@gmail.com'),
+                builder: (context, followLink) => GestureDetector(
+                  onTap: followLink,
+                  child: Text(
+                    'guydavis.ca@gmail.com',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.get('close')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _syncProfileToBackend(Profile profile, Legislature leg) async {
+    final url = kDebugMode 
+      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncProfile'
+      : 'https://syncprofile-wq27mxu42a-uc.a.run.app';
+
+    try {
+      await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'uuid': profile.uuid,
+          'firstName': profile.firstName,
+          'language': profile.language,
+          'legislatureId': leg.id,
+          'legislatureName': leg.name,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Error syncing updated profile: $e');
     }
   }
 }

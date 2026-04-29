@@ -8,7 +8,7 @@ admin.initializeApp();
 const db = getFirestore("memreps");
 
 exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
-  const { uuid, firstName, language, lastLegislatureId } = req.body;
+  const { uuid, firstName, language, legislatureId, legislatureName } = req.body;
   
   if (!uuid || !firstName) {
     res.status(400).send("Missing required fields");
@@ -19,7 +19,8 @@ exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
     await db.collection("users").doc(uuid).set({
       firstName,
       language,
-      lastLegislatureId,
+      legislatureId,
+      legislatureName,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -32,7 +33,7 @@ exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
 });
 
 exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
-  const { userUuid, userName, legislatureName, quizModeId, filterPercentage, scorePercentage } = req.body;
+  const { userUuid, userName, legislatureId, legislatureName, quizModeId, filterPercentage, scorePercentage } = req.body;
   
   if (!userUuid || scorePercentage === undefined) {
     res.status(400).send("Missing required fields");
@@ -43,6 +44,7 @@ exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
     await db.collection("quiz_results").add({
       userUuid,
       userName,
+      legislatureId,
       legislatureName,
       quizModeId,
       filterPercentage,
@@ -54,6 +56,58 @@ exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
   } catch (error) {
     console.error("Error syncing quiz result:", error.message);
     res.status(500).send("Error syncing quiz result");
+  }
+});
+
+exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
+  const { legislatureId, quizModeId } = req.body;
+  
+  if (!legislatureId || !quizModeId) {
+    res.status(400).send("Missing required filters");
+    return;
+  }
+
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const snapshot = await db.collection("quiz_results")
+      .where("legislatureId", "==", legislatureId)
+      .where("quizModeId", "==", quizModeId)
+      .where("timestamp", ">=", oneWeekAgo)
+      .where("filterPercentage", ">", 0.2)
+      .get();
+
+    if (snapshot.empty) {
+      res.status(200).send({ leaderboard: [] });
+      return;
+    }
+
+    // Process averages in memory (since Firestore doesn't support grouping)
+    const userStats = {};
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const uuid = data.userUuid;
+      if (!userStats[uuid]) {
+        userStats[uuid] = { name: data.userName, totalScore: 0, count: 0 };
+      }
+      userStats[uuid].totalScore += data.scorePercentage;
+      userStats[uuid].count += 1;
+    });
+
+    const leaderboard = Object.values(userStats)
+      .map(stats => ({
+        name: stats.name,
+        averageScore: stats.totalScore / stats.count
+      }))
+      .sort((a, b) => b.averageScore - a.averageScore)
+      .slice(0, 10);
+
+    res.status(200).send({ leaderboard });
+  } catch (error) {
+    console.error("Error fetching leaderboard:", error.message);
+    res.status(500).send("Error fetching leaderboard");
   }
 });
 
