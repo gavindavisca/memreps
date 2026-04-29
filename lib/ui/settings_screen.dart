@@ -128,15 +128,53 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 48),
-          Center(
-            child: TextButton.icon(
-              onPressed: () => _showCredits(context, l10n),
-              icon: const Icon(Icons.info_rounded, color: Colors.blue),
-              label: Text(
-                l10n.get('credits'),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                onPressed: () => _showCredits(context, l10n),
+                icon: const Icon(Icons.info_rounded, color: Colors.blue),
+                label: Text(
+                  l10n.get('credits'),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                  ),
                 ),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse('https://github.com/gavindavisca/memreps/issues'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.bug_report_rounded, color: Colors.orange),
+                label: Text(
+                  l10n.get('issues'),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => _showPrivacyPolicy(context, l10n),
+                icon: const Icon(Icons.privacy_tip_rounded, color: Colors.green),
+                label: Text(
+                  l10n.get('privacy'),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'v1.0.2',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -278,6 +316,30 @@ class SettingsScreen extends StatelessWidget {
         );
       }
     }
+  }
+
+  void _showPrivacyPolicy(BuildContext context, L10n l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.privacy_tip_rounded, color: Colors.green),
+            const SizedBox(width: 12),
+            Text(l10n.get('privacy_policy_title')),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(l10n.get('privacy_policy_content')),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.get('close')),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showCredits(BuildContext context, L10n l10n) {
