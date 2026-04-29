@@ -76,6 +76,8 @@ class LegislatureSelectionScreen extends StatelessWidget {
     ScraperService scraper,
     L10n l10n,
   ) async {
+    final statusNotifier = ValueNotifier<String>(l10n.get('loading_reps'));
+
     // Show loading dialog
     showDialog(
       context: context,
@@ -86,31 +88,48 @@ class LegislatureSelectionScreen extends StatelessWidget {
           children: [
             SpinKitPulse(color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 16),
-            Text('Fetching data for ${legislature.name}...'),
+            ValueListenableBuilder<String>(
+              valueListenable: statusNotifier,
+              builder: (context, value, _) => Text(
+                value,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
           ],
         ),
       ),
     );
 
     try {
-      // 1. Check if we already have members
-      final hasMembers = await repository.hasMembers(legislature.id);
-      
-      if (!hasMembers) {
-        // Fetch and populate if empty
-        final members = await scraper.fetchMembers(legislature.openNorthId, name: legislature.name);
-        await repository.populateLegislature(legislature.name, legislature.openNorthId, members);
+      // 1. Delete previous legislature data if it exists and is different
+      final previousLegId = appState.currentProfile?.lastLegislatureId;
+      if (previousLegId != null && previousLegId != legislature.id) {
+        await repository.clearLegislatureData(previousLegId);
       }
+
+      // 2. Fetch data with progress updates
+      final members = await scraper.fetchMembers(
+        legislature.openNorthId, 
+        name: legislature.name,
+        onProgress: (step) {
+          if (step == 1) statusNotifier.value = l10n.get('loading_reps');
+          if (step == 2) statusNotifier.value = l10n.get('enhancing_status');
+        },
+      );
       
-      // 3. Update state
+      // 3. Populate database (Full reload)
+      await repository.populateLegislature(legislature.name, legislature.openNorthId, members);
+      
+      // 4. Update state
       appState.setCurrentLegislature(legislature);
       
-      // 4. Sync to backend if profile exists
+      // 5. Sync to backend if profile exists
       if (appState.currentProfile != null) {
         _syncProfileToBackend(appState.currentProfile!, legislature);
       }
       
-      // 5. Close dialog
+      // 6. Close dialog
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) {

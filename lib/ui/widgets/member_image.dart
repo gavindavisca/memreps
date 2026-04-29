@@ -27,8 +27,8 @@ class MemberImage extends StatelessWidget {
         // In local development, point to the local Functions emulator
         finalUrl = 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/proxyImage?url=${Uri.encodeComponent(imageUrl)}';
       } else {
-        // In production, use the relative path provided by Firebase Hosting rewrites
-        finalUrl = '/proxy?url=${Uri.encodeComponent(imageUrl)}';
+        // In production, use the absolute path since GitHub Pages hosting doesn't support relative rewrites
+        finalUrl = 'https://proxyimage-wq27mxu42a-uc.a.run.app?url=${Uri.encodeComponent(imageUrl)}';
       }
     }
 

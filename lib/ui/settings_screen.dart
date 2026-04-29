@@ -256,6 +256,9 @@ class SettingsScreen extends StatelessWidget {
     ScraperService scraper,
     AppState appState,
   ) async {
+    final l10n = appState.l10n;
+    final statusNotifier = ValueNotifier<String>(l10n.get('loading_reps'));
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -265,14 +268,28 @@ class SettingsScreen extends StatelessWidget {
           children: [
             SpinKitPulse(color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 16),
-            const Text('Refreshing data...'),
+            ValueListenableBuilder<String>(
+              valueListenable: statusNotifier,
+              builder: (context, value, _) => Text(
+                value,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
           ],
         ),
       ),
     );
 
     try {
-      final members = await scraper.fetchMembers(legislature.openNorthId, name: legislature.name);
+      final members = await scraper.fetchMembers(
+        legislature.openNorthId, 
+        name: legislature.name,
+        onProgress: (step) {
+          if (step == 1) statusNotifier.value = l10n.get('loading_reps');
+          if (step == 2) statusNotifier.value = l10n.get('enhancing_status');
+        },
+      );
       await repository.populateLegislature(legislature.name, legislature.openNorthId, members);
       if (context.mounted) Navigator.pop(context);
       if (context.mounted) {

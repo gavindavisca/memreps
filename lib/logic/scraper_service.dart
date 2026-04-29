@@ -13,8 +13,8 @@ class ScraperService {
     if (kDebugMode) {
       return 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/proxyData?url=${Uri.encodeComponent(url)}';
     }
-    // In production, use the relative path provided by Firebase Hosting rewrites
-    return '/proxyData?url=${Uri.encodeComponent(url)}';
+    // In production, use the absolute path since GitHub Pages hosting doesn't support relative rewrites
+    return 'https://proxydata-wq27mxu42a-uc.a.run.app?url=${Uri.encodeComponent(url)}';
   }
 
   Future<List<MembersCompanion>> fetchMembers(String slug, {required String name, Function(int)? onProgress}) async {

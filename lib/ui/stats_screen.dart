@@ -296,7 +296,7 @@ class _StatsScreenState extends State<StatsScreen> {
   Future<List<dynamic>> _fetchLeaderboard(String legislatureId, String quizModeId) async {
     final url = kDebugMode 
       ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/getLeaderboard'
-      : 'https://us-central1-openclaw-bot-486015.cloudfunctions.net/getLeaderboard';
+      : 'https://getleaderboard-wq27mxu42a-uc.a.run.app';
 
     try {
       final response = await http.post(

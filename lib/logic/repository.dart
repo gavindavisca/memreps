@@ -83,6 +83,19 @@ class Repository {
     return match != null;
   }
 
+  Future<void> clearLegislatureData(int legislatureId) async {
+    await db.transaction(() async {
+      // Delete FSRS reviews for all members of this legislature
+      final membersInLeg = await (db.select(db.members)..where((tbl) => tbl.legislatureId.equals(legislatureId))).get();
+      final memberIds = membersInLeg.map((m) => m.id).toList();
+      if (memberIds.isNotEmpty) {
+        await (db.delete(db.fsrsReviews)..where((tbl) => tbl.memberId.isIn(memberIds))).go();
+      }
+      // Delete members
+      await (db.delete(db.members)..where((tbl) => tbl.legislatureId.equals(legislatureId))).go();
+    });
+  }
+
   // Used to initially populate a legislature or refresh it
   Future<void> populateLegislature(String name, String openNorthId, List<MembersCompanion> members) async {
     return db.transaction(() async {
@@ -104,6 +117,15 @@ class Repository {
             .write(LegislaturesCompanion(lastUpdated: Value(DateTime.now())));
       }
 
+      // 1. Wipe existing members (and reviews by cascade or manual delete)
+      // We manually delete reviews to be safe if cascade is not enabled
+      final membersInLeg = await (db.select(db.members)..where((tbl) => tbl.legislatureId.equals(leg!.id))).get();
+      final memberIds = membersInLeg.map((m) => m.id).toList();
+      if (memberIds.isNotEmpty) {
+        await (db.delete(db.fsrsReviews)..where((tbl) => tbl.memberId.isIn(memberIds))).go();
+      }
+      await (db.delete(db.members)..where((tbl) => tbl.legislatureId.equals(leg!.id))).go();
+
       // Check for duplicate names to set requiresRidingDistinction
       final lastNames = members.map((m) => _normalizeName(m.lastName.value)).toList();
       final duplicateLastNames = <String>{};
@@ -114,38 +136,17 @@ class Repository {
         }
       }
 
-      // Fetch existing members for this legislature to match and update
-      final existingMembers = await (db.select(db.members)..where((tbl) => tbl.legislatureId.equals(leg!.id))).get();
-      final Map<String, Member> memberMap = {
-        for (var m in existingMembers) '${m.firstName}|${m.lastName}|${m.riding}': m
-      };
-
-      // Add or update members
+      // 2. Insert all new members
       for (var memberData in members) {
         final normalizedLastName = _normalizeName(memberData.lastName.value);
         final requiresDistinction = duplicateLastNames.contains(normalizedLastName);
         
-        final key = '${memberData.firstName.value}|${memberData.lastName.value}|${memberData.riding.value}';
-        final existing = memberMap[key];
-
         final comp = memberData.copyWith(
           legislatureId: Value(leg!.id),
           requiresRidingDistinction: Value(requiresDistinction),
         );
 
-        if (existing != null) {
-          // Update existing member to preserve ID (and related reviews)
-          await (db.update(db.members)..where((tbl) => tbl.id.equals(existing.id))).write(comp);
-          memberMap.remove(key); // Mark as processed
-        } else {
-          // Insert new member
-          await db.into(db.members).insert(comp);
-        }
-      }
-
-      // Delete members no longer in the fetched list
-      for (var leftover in memberMap.values) {
-        await (db.delete(db.members)..where((tbl) => tbl.id.equals(leftover.id))).go();
+        await db.into(db.members).insert(comp);
       }
     });
   }
