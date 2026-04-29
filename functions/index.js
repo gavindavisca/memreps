@@ -128,10 +128,34 @@ exports.proxyImage = onRequest({ cors: true }, async (req, res) => {
 
     const contentType = response.headers["content-type"];
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
+    res.setHeader("Cache-Control", "public, max-age=2592000, s-maxage=2592000"); // Cache for 30 days
     res.send(response.data);
   } catch (error) {
     console.error("Error proxying image:", error.message);
     res.status(500).send("Error fetching image");
+  }
+});
+
+exports.proxyData = onRequest({ cors: true }, async (req, res) => {
+  const url = req.query.url;
+  if (!url) {
+    res.status(400).send("Missing url parameter");
+    return;
+  }
+
+  try {
+    const response = await axios.get(url, {
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+      }
+    });
+
+    const contentType = response.headers["content-type"];
+    res.setHeader("Content-Type", contentType);
+    res.send(response.data);
+  } catch (error) {
+    console.error("Error proxying data:", error.message);
+    res.status(500).send("Error fetching data");
   }
 });

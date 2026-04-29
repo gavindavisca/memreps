@@ -94,10 +94,7 @@ class SettingsScreen extends StatelessWidget {
                             IconButton(
                               icon: const Icon(Icons.refresh),
                               onPressed: () async {
-                                final confirmed = await _confirmLegAction(context, l10n);
-                                if (confirmed && context.mounted) {
-                                  _refreshData(context, leg, repository, scraper, appState);
-                                }
+                                _refreshData(context, leg, repository, scraper, appState);
                               },
                             ),
                           ],
@@ -118,10 +115,7 @@ class SettingsScreen extends StatelessWidget {
                     title: Text(l10n.get('change')),
                     leading: const Icon(Icons.swap_horiz),
                     onTap: () async {
-                      final confirmed = await _confirmLegAction(context, l10n);
-                      if (confirmed && context.mounted) {
-                        appState.setCurrentLegislature(null);
-                      }
+                      appState.setCurrentLegislature(null);
                     },
                   ),
                 ],
@@ -221,27 +215,7 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<bool> _confirmLegAction(BuildContext context, L10n l10n) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.get('legislature')),
-        content: Text(l10n.get('confirm_change_leg')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.get('cancel')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(l10n.get('proceed')),
-          ),
-        ],
-      ),
-    );
-    return confirmed ?? false;
-  }
+
 
   void _showLanguageDialog(BuildContext context, AppState appState, L10n l10n) {
     showDialog(

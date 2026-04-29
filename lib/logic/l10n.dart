@@ -52,7 +52,7 @@ class L10n {
       'no_quiz_results': 'No quiz results to show yet.',
       'duplicate_last_names': 'Duplicate Last Names',
       'duplicate': 'Duplicate',
-      'confirm_change_leg': 'Note: Changing or refreshing representative data will discard previously saved quiz results for this legislature. Proceed?',
+
       'proceed': 'Proceed',
       'credits': 'Credits',
       'credits_data_web': '🚀 Data & Web Services',
@@ -69,6 +69,8 @@ class L10n {
       'privacy_policy_title': 'Privacy Policy',
       'privacy_policy_content': 'This application respects your privacy. \n\n1. Data Collection: We collect minimal data necessary for the app to function, including your chosen first name and quiz results. \n\n2. Storage: Data is stored locally on your device and synchronized with our secure Firebase backend for leaderboard and progress tracking purposes. \n\n3. Third Parties: We use Firebase (a Google service) for data storage and hosting. No data is sold to third parties. \n\n4. Your Rights: You can delete your local data at any time via the Settings menu. For backend data deletion, contact us at guydavis.ca@gmail.com. \n\n5. Compliance: This policy is designed to comply with Canadian privacy standards (PIPEDA).',
       'close': 'Close',
+      'loading_reps': 'Loading representatives...',
+      'enhancing_status': 'Enhancing with latest status...',
     },
     'fr': {
       'welcome': 'Bienvenue!',
@@ -122,7 +124,7 @@ class L10n {
       'no_quiz_results': 'Aucun résultat de quiz à afficher pour le moment.',
       'duplicate_last_names': 'Noms de famille en double',
       'duplicate': 'Double',
-      'confirm_change_leg': 'Remarque : Le changement ou l\'actualisation des données sur les représentants supprimera les résultats des quiz enregistrés pour cette législature. Continuer ?',
+
       'proceed': 'Continuer',
       'credits': 'Crédits',
       'credits_data_web': '🚀 Données et Services Web',
@@ -139,6 +141,8 @@ class L10n {
       'privacy_policy_title': 'Politique de confidentialité',
       'privacy_policy_content': 'Cette application respecte votre vie privée. \n\n1. Collecte de données : Nous collectons le minimum de données nécessaires au fonctionnement de l\'application, y compris le prénom de votre choix et les résultats des quiz. \n\n2. Stockage : Les données sont stockées localement sur votre appareil et synchronisées avec notre backend Firebase sécurisé à des fins de classement et de suivi des progrès. \n\n3. Tierces parties : Nous utilisons Firebase (un service Google) pour le stockage et l\'hébergement des données. Aucune donnée n\'est vendue à des tiers. \n\n4. Vos droits : Vous pouvez supprimer vos données locales à tout moment via le menu Paramètres. Pour la suppression des données du backend, contactez-nous à guydavis.ca@gmail.com. \n\n5. Conformité : Cette politique est conçue pour se conformer aux normes canadiennes de protection de la vie privée (LPRPDE).',
       'close': 'Fermer',
+      'loading_reps': 'Chargement des représentants...',
+      'enhancing_status': 'Amélioration avec le dernier statut...',
     },
   };
 

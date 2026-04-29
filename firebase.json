@@ -24,6 +24,10 @@
         "function": "proxyImage"
       },
       {
+        "source": "/proxyData",
+        "function": "proxyData"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

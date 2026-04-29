@@ -24,12 +24,11 @@ class MemberImage extends StatelessWidget {
     
     if (kIsWeb && imageUrl.isNotEmpty) {
       if (kDebugMode) {
-        // In local development, the relative /proxy path doesn't exist on the Flutter dev server.
-        // We point directly to the local Functions emulator instead.
+        // In local development, point to the local Functions emulator
         finalUrl = 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/proxyImage?url=${Uri.encodeComponent(imageUrl)}';
       } else {
-        // In production (e.g. GitHub Pages), we use the absolute Cloud Function URL.
-        finalUrl = 'https://proxyimage-wq27mxu42a-uc.a.run.app?url=${Uri.encodeComponent(imageUrl)}';
+        // In production, use the relative path provided by Firebase Hosting rewrites
+        finalUrl = '/proxy?url=${Uri.encodeComponent(imageUrl)}';
       }
     }
 

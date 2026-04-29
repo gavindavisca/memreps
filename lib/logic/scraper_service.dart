@@ -1,22 +1,33 @@
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
+import 'package:xml/xml.dart';
+import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
 import '../data/database.dart';
 
 class ScraperService {
   final Dio dio = Dio();
 
-  Future<List<MembersCompanion>> fetchMembers(String slug, {required String name}) async {
+  String _proxyUrl(String url) {
+    if (!kIsWeb) return url;
+    if (kDebugMode) {
+      return 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/proxyData?url=${Uri.encodeComponent(url)}';
+    }
+    // In production, use the relative path provided by Firebase Hosting rewrites
+    return '/proxyData?url=${Uri.encodeComponent(url)}';
+  }
+
+  Future<List<MembersCompanion>> fetchMembers(String slug, {required String name, Function(int)? onProgress}) async {
     try {
+      onProgress?.call(1);
       final response = await dio.get('https://represent.opennorth.ca/representatives/$slug/?limit=1000');
       final data = response.data;
       final objects = data['objects'] as List;
 
-      return objects.map((obj) {
-        // Some APIs might return names differently
+      var members = objects.map((obj) {
         String firstName = obj['first_name'] ?? '';
         String lastName = obj['last_name'] ?? '';
         
-        // If first/last names are empty, try to split the full name
         if (firstName.isEmpty && lastName.isEmpty && obj['name'] != null) {
           final parts = (obj['name'] as String).split(' ');
           if (parts.length > 1) {
@@ -37,8 +48,289 @@ class ScraperService {
           region: Value(_determineRegion(name, obj)),
         );
       }).toList();
+
+      // Enrich House of Commons specifically
+      if (slug == 'house-of-commons' || slug == 'quebec-assemblee-nationale' || slug == 'ontario-legislature' || slug == 'alberta-legislature' || slug == 'yukon-legislature') {
+        onProgress?.call(2);
+      }
+
+      if (slug == 'house-of-commons') {
+        members = await _enrichHouseOfCommons(members);
+      } else if (slug == 'quebec-assemblee-nationale') {
+        members = await _enrichQuebec(members);
+      } else if (slug == 'alberta-legislature') {
+        members = await _enrichAlberta(members);
+      } else if (slug == 'ontario-legislature') {
+        members = await _enrichOntario(members);
+      } else if (slug == 'yukon-legislature') {
+        members = await _enrichYukon(members);
+      }
+
+      return members;
     } catch (e) {
       throw Exception('Failed to fetch data for $name: $e');
+    }
+  }
+
+  Future<List<MembersCompanion>> _enrichAlberta(List<MembersCompanion> baseMembers) async {
+    try {
+      final response = await dio.get(_proxyUrl('https://www.assembly.ab.ca/txt/mla_home/contacts.csv'));
+      final csvData = csv.decode(response.data.toString());
+      
+      if (csvData.length < 2) return baseMembers;
+      
+      final List<MembersCompanion> enriched = [];
+      final headers = csvData[0];
+      
+      final lastNameIdx = headers.indexOf('Last Name');
+      final firstNameIdx = headers.indexOf('First Name');
+      final caucusIdx = headers.indexOf('Caucus');
+      final constituencyIdx = headers.indexOf('Constituency');
+      
+      for (int i = 1; i < csvData.length; i++) {
+        final row = csvData[i];
+        if (row.length <= constituencyIdx) continue;
+        
+        final offFirstName = row[firstNameIdx].toString().trim();
+        final offLastName = row[lastNameIdx].toString().trim();
+        final offRiding = row[constituencyIdx].toString().trim();
+        final offParty = row[caucusIdx].toString().trim();
+        
+        final match = baseMembers.firstWhere(
+          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
+                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          orElse: () => MembersCompanion(
+            firstName: Value(offFirstName),
+            lastName: Value(offLastName),
+            riding: Value(offRiding),
+            party: Value(offParty),
+            imageUrl: Value(''),
+            title: Value('MLA'),
+          ),
+        );
+
+        enriched.add(match.copyWith(
+          firstName: Value(offFirstName),
+          lastName: Value(offLastName),
+          party: Value(offParty),
+          riding: Value(offRiding),
+        ));
+      }
+      return enriched;
+    } catch (e) {
+      return baseMembers;
+    }
+  }
+
+  Future<List<MembersCompanion>> _enrichOntario(List<MembersCompanion> baseMembers) async {
+    try {
+      // Official Ontario Legislative Assembly CSV feed
+      final response = await dio.get(_proxyUrl('https://www.ola.org/sites/default/files/node-files/office_csvs/offices-all.csv'));
+      final csvData = csv.decode(response.data.toString());
+      
+      if (csvData.length < 2) return baseMembers;
+      
+      final List<MembersCompanion> enriched = [];
+      final headers = csvData[0];
+      
+      final firstNameIdx = headers.indexOf('First name');
+      final lastNameIdx = headers.indexOf('Last name');
+      final ridingIdx = headers.indexOf('Riding name');
+      final partyIdx = headers.indexOf('Party');
+      
+      // Keep track of added member names to avoid duplicates in the CSV (which has multiple offices per MPP)
+      final seenMembers = <String>{};
+
+      for (int i = 1; i < csvData.length; i++) {
+        final row = csvData[i];
+        final offFirstName = row[firstNameIdx].toString().trim();
+        final offLastName = row[lastNameIdx].toString().trim();
+        final offRiding = row[ridingIdx].toString().trim();
+        final offParty = row[partyIdx].toString().trim();
+        
+        final memberKey = '$offFirstName|$offLastName';
+        if (seenMembers.contains(memberKey)) continue;
+        seenMembers.add(memberKey);
+
+        final match = baseMembers.firstWhere(
+          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
+                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          orElse: () => MembersCompanion(
+            firstName: Value(offFirstName),
+            lastName: Value(offLastName),
+            riding: Value(offRiding),
+            party: Value(offParty),
+            imageUrl: Value(''),
+            title: Value('MPP'),
+          ),
+        );
+
+        enriched.add(match.copyWith(
+          firstName: Value(offFirstName),
+          lastName: Value(offLastName),
+          party: Value(offParty),
+          riding: Value(offRiding),
+        ));
+      }
+      return enriched;
+    } catch (e) {
+      return baseMembers;
+    }
+  }
+
+  Future<List<MembersCompanion>> _enrichHouseOfCommons(List<MembersCompanion> baseMembers) async {
+    try {
+      // Official House of Commons XML search endpoint
+      final response = await dio.get(_proxyUrl('https://www.ourcommons.ca/Members/en/search/xml'));
+      final document = XmlDocument.parse(response.data);
+      final parliamentarians = document.findAllElements('MemberOfParliament');
+      
+      final List<MembersCompanion> enriched = [];
+      
+      for (final node in parliamentarians) {
+        final offFirstName = node.findElements('PersonOfficialFirstName').first.innerText;
+        final offLastName = node.findElements('PersonOfficialLastName').first.innerText;
+        final offRiding = node.findElements('ConstituencyName').first.innerText;
+        final offParty = node.findElements('CaucusShortName').first.innerText;
+        
+        final lastNameClean = offLastName.replaceAll(' ', '');
+        final firstNameClean = offFirstName.replaceAll(' ', '');
+        final partyCode = _getHouseOfCommonsPartyCode(offParty);
+        final officialImageUrl = 'https://www.ourcommons.ca/Content/Parliamentarians/Images/OfficialMPPhotos/45/${lastNameClean}${firstNameClean}_$partyCode.jpg';
+
+        // Find match in OpenNorth data by name and riding
+        final match = baseMembers.firstWhere(
+          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
+                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          orElse: () => MembersCompanion(
+            firstName: Value(offFirstName),
+            lastName: Value(offLastName),
+            riding: Value(offRiding),
+            party: Value(offParty),
+            imageUrl: Value(officialImageUrl), 
+            title: Value('MP'),
+          ),
+        );
+
+        // Update with latest official party/riding/name and official image
+        enriched.add(match.copyWith(
+          firstName: Value(offFirstName),
+          lastName: Value(offLastName),
+          party: Value(offParty),
+          riding: Value(offRiding),
+          imageUrl: Value(officialImageUrl),
+        ));
+      }
+      
+      return enriched;
+    } catch (e) {
+      // If official site enrichment fails, return base members as fallback
+      return baseMembers;
+    }
+  }
+
+  String _getHouseOfCommonsPartyCode(String partyName) {
+    final name = partyName.toLowerCase();
+    if (name.contains('liberal')) return 'Lib';
+    if (name.contains('conservative')) return 'CPC';
+    if (name.contains('bloc')) return 'BQ';
+    if (name.contains('ndp') || name.contains('new democratic')) return 'NDP';
+    if (name.contains('green')) return 'GP';
+    return 'IND';
+  }
+
+  Future<List<MembersCompanion>> _enrichQuebec(List<MembersCompanion> baseMembers) async {
+    try {
+      final response = await dio.get(_proxyUrl('https://www.assnat.qc.ca/fr/deputes/index.xml'));
+      final document = XmlDocument.parse(response.data);
+      final deputes = document.findAllElements('Depute');
+      
+      final List<MembersCompanion> enriched = [];
+      
+      for (final node in deputes) {
+        final offFirstName = node.findElements('Prenom').first.innerText;
+        final offLastName = node.findElements('Nom').first.innerText;
+        final offRiding = node.findElements('Circonscription').first.innerText;
+        final offParty = node.findElements('PartiPolitique').first.innerText;
+        
+        final match = baseMembers.firstWhere(
+          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
+                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          orElse: () => MembersCompanion(
+            firstName: Value(offFirstName),
+            lastName: Value(offLastName),
+            riding: Value(offRiding),
+            party: Value(offParty),
+            imageUrl: Value(''),
+            title: Value('Député'),
+          ),
+        );
+
+        enriched.add(match.copyWith(
+          firstName: Value(offFirstName),
+          lastName: Value(offLastName),
+          party: Value(offParty),
+          riding: Value(offRiding),
+        ));
+      }
+      return enriched;
+    } catch (e) {
+      return baseMembers;
+    }
+  }
+
+  Future<List<MembersCompanion>> _enrichYukon(List<MembersCompanion> baseMembers) async {
+    try {
+      final response = await dio.get(_proxyUrl('https://yukonassembly.ca/export-mla-list'));
+      final csvData = csv.decode(response.data.toString());
+      
+      if (csvData.length < 2) return baseMembers;
+      
+      final List<MembersCompanion> enriched = [];
+      final headers = csvData[0];
+      final titleIdx = headers.indexOf('Title');
+      final districtIdx = headers.indexOf('District');
+      final partyIdx = headers.indexOf('Party');
+      
+      for (int i = 1; i < csvData.length; i++) {
+        final row = csvData[i];
+        final fullName = row[titleIdx].toString();
+        final offRiding = row[districtIdx].toString();
+        final offParty = row[partyIdx].toString();
+        
+        String offFirstName = '';
+        String offLastName = '';
+        final nameParts = fullName.split(' ');
+        if (nameParts.length > 1) {
+          offFirstName = nameParts.first;
+          offLastName = nameParts.sublist(1).join(' ');
+        } else {
+          offLastName = fullName;
+        }
+
+        final match = baseMembers.firstWhere(
+          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
+                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          orElse: () => MembersCompanion(
+            firstName: Value(offFirstName),
+            lastName: Value(offLastName),
+            riding: Value(offRiding),
+            party: Value(offParty),
+            imageUrl: Value(''),
+            title: Value('MLA'),
+          ),
+        );
+
+        enriched.add(match.copyWith(
+          firstName: Value(offFirstName),
+          lastName: Value(offLastName),
+          party: Value(offParty),
+          riding: Value(offRiding),
+        ));
+      }
+      return enriched;
+    } catch (e) {
+      return baseMembers;
     }
   }
 

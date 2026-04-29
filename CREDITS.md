@@ -5,7 +5,7 @@ This application is made possible by the following open-source projects, web ser
 ## Data & Web Services
 
 ### [OpenNorth](https://opennorth.ca/)
-Special thanks to OpenNorth for providing the [Represent API](https://represent.opennorth.ca/), which serves as the primary data source for legislative members, ridings, and party affiliations across Canada.
+Special thanks to OpenNorth for providing the [Represent API](https://represent.opennorth.ca/), which serves as the primary data source for legislative members, ridings, and party affiliations across Canada.  I enhance to reflect current status of members due to departures, floor-crossing, and by-elections.
 
 ### Official Legislature Websites
 Biographical information and official portrait images are sourced via the OpenNorth API from the House of Commons and provincial legislative websites.

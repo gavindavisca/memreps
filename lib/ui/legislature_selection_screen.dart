@@ -93,11 +93,14 @@ class LegislatureSelectionScreen extends StatelessWidget {
     );
 
     try {
-      // 1. Fetch data
-      final members = await scraper.fetchMembers(legislature.openNorthId, name: legislature.name);
+      // 1. Check if we already have members
+      final hasMembers = await repository.hasMembers(legislature.id);
       
-      // 2. Populate database
-      await repository.populateLegislature(legislature.name, legislature.openNorthId, members);
+      if (!hasMembers) {
+        // Fetch and populate if empty
+        final members = await scraper.fetchMembers(legislature.openNorthId, name: legislature.name);
+        await repository.populateLegislature(legislature.name, legislature.openNorthId, members);
+      }
       
       // 3. Update state
       appState.setCurrentLegislature(legislature);

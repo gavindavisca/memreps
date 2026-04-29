@@ -26,7 +26,7 @@ class _StatsScreenState extends State<StatsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.get('results'))),
       body: FutureBuilder<List<QuizResult>>(
-        future: repository.getQuizResults(userId),
+        future: repository.getQuizResults(userId, legislatureId: appState.currentLegislature?.id),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           

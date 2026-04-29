@@ -21,6 +21,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
   final TextEditingController _nameController = TextEditingController();
   bool _isCreating = false;
   bool _isLoading = false;
+  int _loadingStage = 0;
   String _selectedLanguage = 'en';
   Legislature? _selectedLegislature;
   List<Legislature> _legislatures = [];
@@ -119,14 +120,21 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
     final l10n = L10n(_selectedLanguage); // Local preview during onboarding
 
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 24),
-              Text('Setting up your profile...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 24),
+              Text(
+                _loadingStage == 1 
+                  ? l10n.get('loading_reps')
+                  : _loadingStage == 2
+                    ? l10n.get('enhancing_status')
+                    : 'Setting up your profile...',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),
@@ -350,7 +358,13 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
       final repository = Provider.of<Repository>(context, listen: false);
 
       // 1. Download data for the selected legislature
-      final members = await scraper.fetchMembers(_selectedLegislature!.openNorthId, name: _selectedLegislature!.name);
+      final members = await scraper.fetchMembers(
+        _selectedLegislature!.openNorthId, 
+        name: _selectedLegislature!.name,
+        onProgress: (stage) {
+          if (mounted) setState(() => _loadingStage = stage);
+        },
+      );
       await repository.populateLegislature(_selectedLegislature!.name, _selectedLegislature!.openNorthId, members);
 
       // 2. Create the profile

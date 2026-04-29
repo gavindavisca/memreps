@@ -40,6 +40,7 @@ class Repository {
 
   Future<void> deleteProfile(int id) async {
     await db.transaction(() async {
+      await (db.delete(db.quizResults)..where((tbl) => tbl.userId.equals(id))).go();
       await (db.delete(db.fsrsReviews)..where((tbl) => tbl.userId.equals(id))).go();
       await (db.delete(db.profiles)..where((tbl) => tbl.id.equals(id))).go();
     });
@@ -75,8 +76,14 @@ class Repository {
 
   // Legislature Management
   Future<List<Legislature>> getLegislatures() => db.select(db.legislatures).get();
+  
+  Future<bool> hasMembers(int legislatureId) async {
+    final query = db.select(db.members)..where((tbl) => tbl.legislatureId.equals(legislatureId))..limit(1);
+    final match = await query.getSingleOrNull();
+    return match != null;
+  }
 
-  // Used to initially populate a legislature after scraping
+  // Used to initially populate a legislature or refresh it
   Future<void> populateLegislature(String name, String openNorthId, List<MembersCompanion> members) async {
     return db.transaction(() async {
       // Create or update legislature
@@ -93,8 +100,6 @@ class Repository {
         );
         leg = await (db.select(db.legislatures)..where((tbl) => tbl.id.equals(legId))).getSingle();
       } else {
-        // Clear existing members if refreshing
-        await (db.delete(db.members)..where((tbl) => tbl.legislatureId.equals(leg!.id))).go();
         await (db.update(db.legislatures)..where((tbl) => tbl.id.equals(leg!.id)))
             .write(LegislaturesCompanion(lastUpdated: Value(DateTime.now())));
       }
@@ -109,16 +114,38 @@ class Repository {
         }
       }
 
-      // Add members
-      for (var member in members) {
-        final normalizedLastName = _normalizeName(member.lastName.value);
+      // Fetch existing members for this legislature to match and update
+      final existingMembers = await (db.select(db.members)..where((tbl) => tbl.legislatureId.equals(leg!.id))).get();
+      final Map<String, Member> memberMap = {
+        for (var m in existingMembers) '${m.firstName}|${m.lastName}|${m.riding}': m
+      };
+
+      // Add or update members
+      for (var memberData in members) {
+        final normalizedLastName = _normalizeName(memberData.lastName.value);
         final requiresDistinction = duplicateLastNames.contains(normalizedLastName);
         
-        final comp = member.copyWith(
-          legislatureId: Value(leg.id),
+        final key = '${memberData.firstName.value}|${memberData.lastName.value}|${memberData.riding.value}';
+        final existing = memberMap[key];
+
+        final comp = memberData.copyWith(
+          legislatureId: Value(leg!.id),
           requiresRidingDistinction: Value(requiresDistinction),
         );
-        await db.into(db.members).insert(comp);
+
+        if (existing != null) {
+          // Update existing member to preserve ID (and related reviews)
+          await (db.update(db.members)..where((tbl) => tbl.id.equals(existing.id))).write(comp);
+          memberMap.remove(key); // Mark as processed
+        } else {
+          // Insert new member
+          await db.into(db.members).insert(comp);
+        }
+      }
+
+      // Delete members no longer in the fetched list
+      for (var leftover in memberMap.values) {
+        await (db.delete(db.members)..where((tbl) => tbl.id.equals(leftover.id))).go();
       }
     });
   }
@@ -267,11 +294,15 @@ class Repository {
     );
   }
 
-  Future<List<QuizResult>> getQuizResults(int userId) {
-    return (db.select(db.quizResults)
-          ..where((tbl) => tbl.userId.equals(userId))
-          ..orderBy([(tbl) => OrderingTerm.asc(tbl.timestamp)]))
-        .get();
+  Future<List<QuizResult>> getQuizResults(int userId, {int? legislatureId}) {
+    final query = db.select(db.quizResults)
+      ..where((tbl) => tbl.userId.equals(userId));
+    
+    if (legislatureId != null) {
+      query.where((tbl) => tbl.legislatureId.equals(legislatureId));
+    }
+    
+    return (query..orderBy([(tbl) => OrderingTerm.asc(tbl.timestamp)])).get();
   }
 }
 
