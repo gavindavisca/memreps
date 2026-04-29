@@ -61,19 +61,35 @@ class _StatsScreenState extends State<StatsScreen> {
              );
           }
 
-          // Group by mode
+          // Group by mode (handling legacy multi_choice)
           final Map<String, List<QuizResult>> grouped = {};
           for (final r in filteredResults) {
-            grouped.putIfAbsent(r.quizModeId, () => []).add(r);
+            String modeId = r.quizModeId;
+            if (modeId == 'multi_choice') modeId = 'name_match';
+            grouped.putIfAbsent(modeId, () => []).add(r);
           }
 
-          final modes = grouped.keys.toList()..sort();
+          // Define explicit order matching QuizSelectionScreen
+          final List<String> orderedModes = [
+            'name_match',
+            'party_match',
+            'riding_match',
+            'face_match',
+            'name_recall',
+          ];
+
+          // Only show modes that have data
+          final displayModes = orderedModes.where((m) => grouped.containsKey(m)).toList();
+
+          if (displayModes.isEmpty) {
+            return const Center(child: Text("No relevant quiz data found."));
+          }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: modes.length,
+            itemCount: displayModes.length,
             itemBuilder: (context, index) {
-              final modeId = modes[index];
+              final modeId = displayModes[index];
               final results = grouped[modeId]!;
               return _buildModeChart(modeId, results, l10n);
             },
