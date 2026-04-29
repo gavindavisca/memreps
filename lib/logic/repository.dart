@@ -1,4 +1,5 @@
 import 'package:fsrs/fsrs.dart' as fsrs;
+import 'package:uuid/uuid.dart';
 import '../data/database.dart';
 import 'package:drift/drift.dart';
 
@@ -24,8 +25,10 @@ class Repository {
   Future<List<Profile>> getProfiles() => db.select(db.profiles).get();
   
   Future<Profile> createProfile(String firstName, {String language = 'en', int? lastLegislatureId}) async {
+    final uuid = const Uuid().v4();
     final companion = ProfilesCompanion.insert(
       firstName: firstName,
+      uuid: Value(uuid),
       language: Value(language),
       lastLegislatureId: Value(lastLegislatureId),
       lastUsedAt: Value(DateTime.now()),

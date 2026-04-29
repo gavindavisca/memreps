@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
@@ -190,7 +192,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 _buildInputArea(question, l10n),
                 if (_isAnswered) ...[
                   const SizedBox(height: 16),
-                  if (widget.mode == QuizMode.multipleChoiceParties || widget.mode == QuizMode.multipleChoiceRidings) ...[
+                  if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
                     Text(
                       '${question.member.firstName} ${question.member.lastName}',
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -209,16 +211,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
   String _getModeKey() {
     switch (widget.mode) {
-      case QuizMode.multipleChoice: return 'multi_choice';
-      case QuizMode.multipleChoiceParties: return 'multi_choice_parties';
-      case QuizMode.multipleChoiceRidings: return 'multi_choice_ridings';
-      case QuizMode.activeRecall: return 'active_recall';
-      case QuizMode.reverseRecall: return 'reverse_recall';
+      case QuizMode.nameMatch: return 'name_match';
+      case QuizMode.partyMatch: return 'party_match';
+      case QuizMode.ridingMatch: return 'riding_match';
+      case QuizMode.nameRecall: return 'name_recall';
+      case QuizMode.faceMatch: return 'face_match';
     }
   }
 
   Widget _buildQuestionCard(QuizQuestion question, L10n l10n) {
-    if (widget.mode == QuizMode.reverseRecall) {
+    if (widget.mode == QuizMode.faceMatch) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Card(
@@ -278,9 +280,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildInputArea(QuizQuestion question, L10n l10n) {
     switch (widget.mode) {
-      case QuizMode.multipleChoice:
-      case QuizMode.multipleChoiceParties:
-      case QuizMode.multipleChoiceRidings:
+      case QuizMode.nameMatch:
+      case QuizMode.partyMatch:
+      case QuizMode.ridingMatch:
         return Column(
           children: question.options!.map((option) {
             final isSelected = _selectedAnswer == option;
@@ -315,7 +317,7 @@ class _QuizScreenState extends State<QuizScreen> {
           }).toList(),
         );
 
-      case QuizMode.activeRecall:
+      case QuizMode.nameRecall:
         return Column(
           children: [
             TextField(
@@ -381,7 +383,7 @@ class _QuizScreenState extends State<QuizScreen> {
           ],
         );
 
-      case QuizMode.reverseRecall:
+      case QuizMode.faceMatch:
         return Column(
           children: [
             GridView.builder(
@@ -432,18 +434,18 @@ class _QuizScreenState extends State<QuizScreen> {
     final question = _questions[_currentIndex];
     bool correct = false;
 
-    if (widget.mode == QuizMode.multipleChoice || 
-        widget.mode == QuizMode.multipleChoiceParties ||
-        widget.mode == QuizMode.multipleChoiceRidings) {
+    if (widget.mode == QuizMode.nameMatch || 
+        widget.mode == QuizMode.partyMatch ||
+        widget.mode == QuizMode.ridingMatch) {
       correct = answer == question.correctAnswer;
-    } else if (widget.mode == QuizMode.activeRecall) {
+    } else if (widget.mode == QuizMode.nameRecall) {
       if (question.ridingOptions != null && _selectedRiding == null) {
         return;
       }
       final nameCorrect = answer.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
       final ridingCorrect = question.ridingOptions == null || _selectedRiding == question.member.riding;
       correct = nameCorrect && ridingCorrect;
-    } else if (widget.mode == QuizMode.reverseRecall) {
+    } else if (widget.mode == QuizMode.faceMatch) {
       correct = answer == question.member.id.toString();
     }
 
@@ -470,15 +472,46 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<void> _saveQuizResult() async {
     final appState = Provider.of<AppState>(context, listen: false);
     final repository = Provider.of<Repository>(context, listen: false);
+    final profile = appState.currentProfile!;
+    final leg = appState.currentLegislature!;
+    final score = _correctCount / _questions.length;
     
+    // 1. Local Save
     await repository.saveQuizResult(
-      userId: appState.currentProfile!.id,
-      userName: appState.currentProfile!.firstName,
-      legislatureId: appState.currentLegislature!.id,
+      userId: profile.id,
+      userName: profile.firstName,
+      legislatureId: leg.id,
       quizModeId: _getModeKey(),
       filterPercentage: _filterPercentage,
-      scorePercentage: _correctCount / _questions.length,
+      scorePercentage: score,
     );
+
+    // 2. Backend Sync
+    await _syncQuizResultToBackend(profile, leg, score);
+  }
+
+  Future<void> _syncQuizResultToBackend(Profile profile, Legislature leg, double score) async {
+    final url = kDebugMode 
+      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncQuizResult'
+      : 'https://syncquizresult-wq27mxu42a-uc.a.run.app';
+
+    try {
+      await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userUuid': profile.uuid,
+          'userName': profile.firstName,
+          'legislatureName': leg.name,
+          'quizModeId': _getModeKey(),
+          'filterPercentage': _filterPercentage,
+          'scorePercentage': score,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Error syncing quiz result to backend: $e');
+      // We don't block the user on sync failure
+    }
   }
 
   Widget _buildNextButton(L10n l10n) {

@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 import '../logic/app_state.dart';
 import '../logic/repository.dart';
 import '../data/database.dart';
@@ -358,7 +361,10 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
         lastLegislatureId: _selectedLegislature?.id,
       );
 
-      // 3. Set as current profile (this will transition to Home/Browse)
+      // 3. Sync to backend
+      await _syncProfileToBackend(profile);
+
+      // 4. Set as current profile (this will transition to Home/Browse)
       await appState.setCurrentProfile(profile);
     } catch (e) {
       setState(() => _isLoading = false);
@@ -367,6 +373,32 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
           SnackBar(content: Text('Setup failed: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _syncProfileToBackend(Profile profile) async {
+    final url = kDebugMode 
+      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncProfile'
+      : 'https://syncprofile-wq27mxu42a-uc.a.run.app';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'uuid': profile.uuid,
+          'firstName': profile.firstName,
+          'language': profile.language,
+          'lastLegislatureId': profile.lastLegislatureId,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        debugPrint('Backend sync failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error syncing profile to backend: $e');
+      // We don't block the user if sync fails, but we log it.
     }
   }
 }

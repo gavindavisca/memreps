@@ -1,6 +1,61 @@
 const { onRequest } = require("firebase-functions/v2/https");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const admin = require("firebase-admin");
 const axios = require("axios");
 const cors = require("cors")({ origin: true });
+
+admin.initializeApp();
+const db = getFirestore("memreps");
+
+exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
+  const { uuid, firstName, language, lastLegislatureId } = req.body;
+  
+  if (!uuid || !firstName) {
+    res.status(400).send("Missing required fields");
+    return;
+  }
+
+  try {
+    await db.collection("users").doc(uuid).set({
+      firstName,
+      language,
+      lastLegislatureId,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    res.status(200).send({ success: true });
+  } catch (error) {
+    console.error("Error syncing profile:", error.message);
+    res.status(500).send("Error syncing profile");
+  }
+});
+
+exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
+  const { userUuid, userName, legislatureName, quizModeId, filterPercentage, scorePercentage } = req.body;
+  
+  if (!userUuid || scorePercentage === undefined) {
+    res.status(400).send("Missing required fields");
+    return;
+  }
+
+  try {
+    await db.collection("quiz_results").add({
+      userUuid,
+      userName,
+      legislatureName,
+      quizModeId,
+      filterPercentage,
+      scorePercentage,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    res.status(200).send({ success: true });
+  } catch (error) {
+    console.error("Error syncing quiz result:", error.message);
+    res.status(500).send("Error syncing quiz result");
+  }
+});
 
 exports.proxyImage = onRequest({ cors: true }, async (req, res) => {
   const imageUrl = req.query.url;

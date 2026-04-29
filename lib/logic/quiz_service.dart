@@ -1,11 +1,11 @@
 import '../data/database.dart';
 
 enum QuizMode {
-  multipleChoice,
-  multipleChoiceParties,
-  multipleChoiceRidings,
-  activeRecall,
-  reverseRecall,
+  nameMatch,
+  partyMatch,
+  ridingMatch,
+  nameRecall,
+  faceMatch,
 }
 
 class QuizQuestion {
@@ -37,15 +37,15 @@ class QuizService {
   }) {
     return members.map((member) {
       switch (mode) {
-        case QuizMode.multipleChoice:
+        case QuizMode.nameMatch:
           return _generateMultipleChoice(member, allLegislatureMembers);
-        case QuizMode.multipleChoiceParties:
+        case QuizMode.partyMatch:
           return _generateMultipleChoiceParties(member, allLegislatureMembers);
-        case QuizMode.multipleChoiceRidings:
+        case QuizMode.ridingMatch:
           return _generateMultipleChoiceRidings(member, allLegislatureMembers);
-        case QuizMode.activeRecall:
+        case QuizMode.nameRecall:
           return _generateActiveRecall(member, allLegislatureMembers);
-        case QuizMode.reverseRecall:
+        case QuizMode.faceMatch:
           return _generateReverseRecall(member, allLegislatureMembers);
       }
     }).toList();

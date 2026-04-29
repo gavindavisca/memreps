@@ -372,6 +372,15 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     requiredDuringInsert: false,
     defaultValue: const Constant('en'),
   );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
     'lastUsedAt',
   );
@@ -401,6 +410,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     firstName,
     lastLegislatureId,
     language,
+    uuid,
     lastUsedAt,
     createdAt,
   ];
@@ -440,6 +450,12 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
       context.handle(
         _languageMeta,
         language.isAcceptableOrUnknown(data['language']!, _languageMeta),
+      );
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
       );
     }
     if (data.containsKey('last_used_at')) {
@@ -482,6 +498,10 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         DriftSqlType.string,
         data['${effectivePrefix}language'],
       )!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      ),
       lastUsedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_used_at'],
@@ -504,6 +524,7 @@ class Profile extends DataClass implements Insertable<Profile> {
   final String firstName;
   final int? lastLegislatureId;
   final String language;
+  final String? uuid;
   final DateTime? lastUsedAt;
   final DateTime createdAt;
   const Profile({
@@ -511,6 +532,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     required this.firstName,
     this.lastLegislatureId,
     required this.language,
+    this.uuid,
     this.lastUsedAt,
     required this.createdAt,
   });
@@ -523,6 +545,9 @@ class Profile extends DataClass implements Insertable<Profile> {
       map['last_legislature_id'] = Variable<int>(lastLegislatureId);
     }
     map['language'] = Variable<String>(language);
+    if (!nullToAbsent || uuid != null) {
+      map['uuid'] = Variable<String>(uuid);
+    }
     if (!nullToAbsent || lastUsedAt != null) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt);
     }
@@ -538,6 +563,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           ? const Value.absent()
           : Value(lastLegislatureId),
       language: Value(language),
+      uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
       lastUsedAt: lastUsedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastUsedAt),
@@ -555,6 +581,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       firstName: serializer.fromJson<String>(json['firstName']),
       lastLegislatureId: serializer.fromJson<int?>(json['lastLegislatureId']),
       language: serializer.fromJson<String>(json['language']),
+      uuid: serializer.fromJson<String?>(json['uuid']),
       lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -567,6 +594,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       'firstName': serializer.toJson<String>(firstName),
       'lastLegislatureId': serializer.toJson<int?>(lastLegislatureId),
       'language': serializer.toJson<String>(language),
+      'uuid': serializer.toJson<String?>(uuid),
       'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -577,6 +605,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     String? firstName,
     Value<int?> lastLegislatureId = const Value.absent(),
     String? language,
+    Value<String?> uuid = const Value.absent(),
     Value<DateTime?> lastUsedAt = const Value.absent(),
     DateTime? createdAt,
   }) => Profile(
@@ -586,6 +615,7 @@ class Profile extends DataClass implements Insertable<Profile> {
         ? lastLegislatureId.value
         : this.lastLegislatureId,
     language: language ?? this.language,
+    uuid: uuid.present ? uuid.value : this.uuid,
     lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -597,6 +627,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           ? data.lastLegislatureId.value
           : this.lastLegislatureId,
       language: data.language.present ? data.language.value : this.language,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
       lastUsedAt: data.lastUsedAt.present
           ? data.lastUsedAt.value
           : this.lastUsedAt,
@@ -611,6 +642,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           ..write('firstName: $firstName, ')
           ..write('lastLegislatureId: $lastLegislatureId, ')
           ..write('language: $language, ')
+          ..write('uuid: $uuid, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -623,6 +655,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     firstName,
     lastLegislatureId,
     language,
+    uuid,
     lastUsedAt,
     createdAt,
   );
@@ -634,6 +667,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           other.firstName == this.firstName &&
           other.lastLegislatureId == this.lastLegislatureId &&
           other.language == this.language &&
+          other.uuid == this.uuid &&
           other.lastUsedAt == this.lastUsedAt &&
           other.createdAt == this.createdAt);
 }
@@ -643,6 +677,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<String> firstName;
   final Value<int?> lastLegislatureId;
   final Value<String> language;
+  final Value<String?> uuid;
   final Value<DateTime?> lastUsedAt;
   final Value<DateTime> createdAt;
   const ProfilesCompanion({
@@ -650,6 +685,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.firstName = const Value.absent(),
     this.lastLegislatureId = const Value.absent(),
     this.language = const Value.absent(),
+    this.uuid = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -658,6 +694,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     required String firstName,
     this.lastLegislatureId = const Value.absent(),
     this.language = const Value.absent(),
+    this.uuid = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : firstName = Value(firstName);
@@ -666,6 +703,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Expression<String>? firstName,
     Expression<int>? lastLegislatureId,
     Expression<String>? language,
+    Expression<String>? uuid,
     Expression<DateTime>? lastUsedAt,
     Expression<DateTime>? createdAt,
   }) {
@@ -674,6 +712,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       if (firstName != null) 'first_name': firstName,
       if (lastLegislatureId != null) 'last_legislature_id': lastLegislatureId,
       if (language != null) 'language': language,
+      if (uuid != null) 'uuid': uuid,
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -684,6 +723,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Value<String>? firstName,
     Value<int?>? lastLegislatureId,
     Value<String>? language,
+    Value<String?>? uuid,
     Value<DateTime?>? lastUsedAt,
     Value<DateTime>? createdAt,
   }) {
@@ -692,6 +732,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       firstName: firstName ?? this.firstName,
       lastLegislatureId: lastLegislatureId ?? this.lastLegislatureId,
       language: language ?? this.language,
+      uuid: uuid ?? this.uuid,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -712,6 +753,9 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (language.present) {
       map['language'] = Variable<String>(language.value);
     }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
     if (lastUsedAt.present) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
     }
@@ -728,6 +772,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
           ..write('firstName: $firstName, ')
           ..write('lastLegislatureId: $lastLegislatureId, ')
           ..write('language: $language, ')
+          ..write('uuid: $uuid, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -3203,6 +3248,7 @@ typedef $$ProfilesTableCreateCompanionBuilder =
       required String firstName,
       Value<int?> lastLegislatureId,
       Value<String> language,
+      Value<String?> uuid,
       Value<DateTime?> lastUsedAt,
       Value<DateTime> createdAt,
     });
@@ -3212,6 +3258,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder =
       Value<String> firstName,
       Value<int?> lastLegislatureId,
       Value<String> language,
+      Value<String?> uuid,
       Value<DateTime?> lastUsedAt,
       Value<DateTime> createdAt,
     });
@@ -3297,6 +3344,11 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<String> get language => $composableBuilder(
     column: $table.language,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3408,6 +3460,11 @@ class $$ProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3459,6 +3516,9 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<String> get language =>
       $composableBuilder(column: $table.language, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
@@ -3578,6 +3638,7 @@ class $$ProfilesTableTableManager
                 Value<String> firstName = const Value.absent(),
                 Value<int?> lastLegislatureId = const Value.absent(),
                 Value<String> language = const Value.absent(),
+                Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ProfilesCompanion(
@@ -3585,6 +3646,7 @@ class $$ProfilesTableTableManager
                 firstName: firstName,
                 lastLegislatureId: lastLegislatureId,
                 language: language,
+                uuid: uuid,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
               ),
@@ -3594,6 +3656,7 @@ class $$ProfilesTableTableManager
                 required String firstName,
                 Value<int?> lastLegislatureId = const Value.absent(),
                 Value<String> language = const Value.absent(),
+                Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ProfilesCompanion.insert(
@@ -3601,6 +3664,7 @@ class $$ProfilesTableTableManager
                 firstName: firstName,
                 lastLegislatureId: lastLegislatureId,
                 language: language,
+                uuid: uuid,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
               ),

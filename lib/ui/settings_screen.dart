@@ -30,27 +30,27 @@ class SettingsScreen extends StatelessWidget {
           _buildSection(context, l10n.get('whos_learning')),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: const Icon(Icons.person, size: 32),
-                title: Text(profile.firstName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => appState.setCurrentProfile(null),
-                      tooltip: l10n.get('change'),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    leading: const Icon(Icons.person, size: 32),
+                    title: Text(profile.firstName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
                       onPressed: () => _confirmDelete(context, repository, appState, l10n),
                       tooltip: l10n.get('delete'),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                const Divider(height: 0),
+                ListTile(
+                  title: Text(l10n.get('change')),
+                  leading: const Icon(Icons.swap_horiz),
+                  onTap: () => appState.setCurrentProfile(null),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 32),
