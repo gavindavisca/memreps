@@ -207,18 +207,23 @@ class ScraperService {
             lastName: Value(offLastName),
             riding: Value(offRiding),
             party: Value(offParty),
-            imageUrl: Value(officialImageUrl), 
+            imageUrl: Value(officialImageUrl), // Use calculated URL for brand-new members
             title: Value('MP'),
           ),
         );
 
-        // Update with latest official party/riding/name and official image
+        // Use OpenNorth URL if available, otherwise use calculated official URL
+        final finalImageUrl = (match.imageUrl.present && match.imageUrl.value.isNotEmpty) 
+            ? match.imageUrl.value 
+            : officialImageUrl;
+
+        // Update with latest official party/riding/name
         enriched.add(match.copyWith(
           firstName: Value(offFirstName),
           lastName: Value(offLastName),
           party: Value(offParty),
           riding: Value(offRiding),
-          imageUrl: Value(officialImageUrl),
+          imageUrl: Value(finalImageUrl),
         ));
       }
       
