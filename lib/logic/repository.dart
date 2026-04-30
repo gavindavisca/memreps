@@ -142,7 +142,7 @@ class Repository {
         final requiresDistinction = duplicateLastNames.contains(normalizedLastName);
         
         final comp = memberData.copyWith(
-          legislatureId: Value(leg!.id),
+          legislatureId: Value(leg.id),
           requiresRidingDistinction: Value(requiresDistinction),
         );
 

@@ -3,6 +3,8 @@ import 'package:drift/drift.dart';
 import 'package:xml/xml.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
+import 'package:html/parser.dart' as html;
+import 'package:html/dom.dart' as dom;
 import '../data/database.dart';
 
 class ScraperService {
@@ -64,6 +66,8 @@ class ScraperService {
         members = await _enrichOntario(members);
       } else if (slug == 'yukon-legislature') {
         members = await _enrichYukon(members);
+      } else if (slug == 'senate-of-canada') {
+        members = await _fetchSenate();
       }
 
       return members;
@@ -196,7 +200,7 @@ class ScraperService {
         final lastNameClean = offLastName.replaceAll(' ', '');
         final firstNameClean = offFirstName.replaceAll(' ', '');
         final partyCode = _getHouseOfCommonsPartyCode(offParty);
-        final officialImageUrl = 'https://www.ourcommons.ca/Content/Parliamentarians/Images/OfficialMPPhotos/45/${lastNameClean}${firstNameClean}_$partyCode.jpg';
+        final officialImageUrl = 'https://www.ourcommons.ca/Content/Parliamentarians/Images/OfficialMPPhotos/45/$lastNameClean${firstNameClean}_$partyCode.jpg';
 
         // Find match in OpenNorth data by name and riding
         final match = baseMembers.firstWhere(
@@ -396,5 +400,79 @@ class ScraperService {
     }
 
     return null;
+  }
+
+  Future<List<MembersCompanion>> _fetchSenate() async {
+    try {
+      // 1. Fetch Tiles Fragment for Images
+      final tilesResponse = await dio.get(_proxyUrl('https://sencanada.ca/umbraco/surface/SenatorsAjax/GetSenators?displayFor=senatorstiles&Lang=en'));
+      final tilesDoc = html.parse(tilesResponse.data);
+      final imageMap = <String, String>{};
+      
+      // Target both special role cards and standard senator cards
+      final cards = tilesDoc.querySelectorAll('a.sc-senators-political-card-photo, .sc-senators-senator-card-photo a');
+      for (final card in cards) {
+        final slug = card.attributes['href'];
+        final img = card.querySelector('img');
+        final src = img?.attributes['src'];
+        if (slug != null && src != null) {
+          final fullSrc = src.startsWith('http') ? src : 'https://sencanada.ca$src';
+          imageMap[slug] = fullSrc;
+        }
+      }
+
+      // 2. Fetch List Fragment for Data
+      final listResponse = await dio.get(_proxyUrl('https://sencanada.ca/umbraco/surface/SenatorsAjax/GetSenators?displayFor=senatorslist&Lang=en'));
+      final listDoc = html.parse(listResponse.data);
+      final List<MembersCompanion> senators = [];
+      
+      final rows = listDoc.querySelectorAll('table#senator-list-view-table tbody tr');
+      for (final row in rows) {
+        final cells = row.querySelectorAll('td');
+        if (cells.length < 3) continue;
+
+        final link = cells[0].querySelector('a');
+        final fullName = link?.text.trim() ?? '';
+        final slug = link?.attributes['href'] ?? '';
+        final partyAbbr = cells[1].text.trim();
+        final province = cells[2].text.trim();
+
+        if (fullName.isEmpty) continue;
+
+        // Expand party names
+        String party = partyAbbr;
+        switch (partyAbbr) {
+          case 'ISG': party = 'Independent Senators Group'; break;
+          case 'CSG': party = 'Canadian Senators Group'; break;
+          case 'PSG': party = 'Progressive Senate Group'; break;
+          case 'C': party = 'Conservative Party of Canada'; break;
+          case 'GRO': party = 'Government Representative’s Office'; break;
+        }
+
+        String firstName = '';
+        String lastName = '';
+        if (fullName.contains(',')) {
+          final parts = fullName.split(',');
+          lastName = parts[0].trim();
+          firstName = parts[1].trim();
+        } else {
+          lastName = fullName;
+        }
+
+        senators.add(MembersCompanion(
+          firstName: Value(firstName),
+          lastName: Value(lastName),
+          riding: Value(province),
+          party: Value(party),
+          imageUrl: Value(imageMap[slug] ?? ''),
+          title: Value('Senator'),
+          region: Value(province),
+        ));
+      }
+
+      return senators;
+    } catch (e) {
+      throw Exception('Failed to fetch Senate data: $e');
+    }
   }
 }

@@ -73,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(impl.connect());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration {
@@ -122,6 +122,7 @@ class AppDatabase extends _$AppDatabase {
       ('Assemblée nationale du Québec', 'quebec-assemblee-nationale'),
       ('Legislative Assembly of Saskatchewan', 'saskatchewan-legislature'),
       ('Legislative Assembly of Yukon', 'yukon-legislature'),
+      ('Senate of Canada', 'senate-of-canada'),
     ];
 
     for (final data in seedData) {
