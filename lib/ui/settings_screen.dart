@@ -354,24 +354,15 @@ class SettingsScreen extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                children: [
-                  Text(l10n.get('credits_opennorth_pre')),
-                  Link(
-                    uri: Uri.parse('https://represent.opennorth.ca/'),
-                    builder: (context, followLink) => GestureDetector(
-                      onTap: followLink,
-                      child: Text(
-                        l10n.get('credits_opennorth_link'),
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Text(l10n.get('credits_opennorth_post')),
-                ],
+              RichText(
+                text: TextSpan(
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  children: [
+                    TextSpan(text: l10n.get('credits_opennorth_pre')),
+                    _buildTextSpanLink('OpenNorth', 'https://represent.opennorth.ca/'),
+                    TextSpan(text: l10n.get('credits_opennorth_post')),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -379,7 +370,45 @@ class SettingsScreen extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text(l10n.get('credits_legislatures_desc')),
+              RichText(
+                text: TextSpan(
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  children: [
+                    TextSpan(text: l10n.get('credits_legislatures_desc')),
+                    const TextSpan(text: ' '),
+                    _buildTextSpanLink('Commons', 'https://www.ourcommons.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('Senate', 'https://sencanada.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('BC', 'https://www.leg.bc.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('AB', 'https://www.assembly.ab.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('SK', 'https://www.legassembly.sk.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('MB', 'https://www.gov.mb.ca/legislature'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('ON', 'https://www.ola.org/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('PQ', 'https://www.assnat.qc.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('NB', 'https://www.legnb.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('NS', 'https://nslegislature.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('NL', 'https://www.assembly.nl.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('PEI', 'https://www.assembly.pe.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('NU', 'https://www.assembly.nu.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('NWT', 'https://www.ntlegislativeassembly.ca/'),
+                    const TextSpan(text: ', '),
+                    _buildTextSpanLink('YK', 'https://yukonassembly.ca/'),
+                    const TextSpan(text: '.'),
+                  ],
+                ),
+              ),
               const SizedBox(height: 12),
               Text(
                 l10n.get('credits_thanks'),
@@ -397,6 +426,7 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Link(
                 uri: Uri.parse('mailto:guydavis.ca@gmail.com'),
+                target: LinkTarget.blank,
                 builder: (context, followLink) => GestureDetector(
                   onTap: followLink,
                   child: Text(
@@ -443,5 +473,25 @@ class SettingsScreen extends StatelessWidget {
     } catch (e) {
       debugPrint('Error syncing updated profile: $e');
     }
+  }
+
+  WidgetSpan _buildTextSpanLink(String label, String url) {
+    return WidgetSpan(
+      child: Link(
+        uri: Uri.parse(url),
+        target: LinkTarget.blank,
+        builder: (context, followLink) => GestureDetector(
+          onTap: followLink,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

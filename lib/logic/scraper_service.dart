@@ -6,17 +6,15 @@ import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html;
 import 'package:html/dom.dart' as dom;
 import '../data/database.dart';
+import 'config.dart';
 
 class ScraperService {
   final Dio dio = Dio();
 
   String _proxyUrl(String url) {
     if (!kIsWeb) return url;
-    if (kDebugMode) {
-      return 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/proxyData?url=${Uri.encodeComponent(url)}';
-    }
-    // In production, use the absolute path since GitHub Pages hosting doesn't support relative rewrites
-    return 'https://proxydata-wq27mxu42a-uc.a.run.app?url=${Uri.encodeComponent(url)}';
+    final baseUrl = Config.getFunctionUrl('proxyData');
+    return '$baseUrl?url=${Uri.encodeComponent(url)}';
   }
 
   Future<List<MembersCompanion>> fetchMembers(String slug, {required String name, Function(int)? onProgress}) async {
@@ -187,7 +185,10 @@ class ScraperService {
       // Official House of Commons XML search endpoint
       final response = await dio.get(_proxyUrl('https://www.ourcommons.ca/Members/en/search/xml'));
       final document = XmlDocument.parse(response.data);
-      final parliamentarians = document.findAllElements('MemberOfParliament');
+      // Support the tempuri.org namespace often used in OurCommons XML
+      final parliamentarians = document.findAllElements('MemberOfParliament', namespace: 'http://tempuri.org/').isNotEmpty
+          ? document.findAllElements('MemberOfParliament', namespace: 'http://tempuri.org/')
+          : document.findAllElements('MemberOfParliament');
       
       final List<MembersCompanion> enriched = [];
       

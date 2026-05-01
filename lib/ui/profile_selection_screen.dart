@@ -9,6 +9,7 @@ import '../data/database.dart';
 import '../logic/l10n.dart';
 import '../logic/scraper_service.dart';
 import '../logic/recaptcha_service.dart';
+import '../logic/config.dart';
 
 class ProfileSelectionScreen extends StatefulWidget {
   const ProfileSelectionScreen({super.key});
@@ -390,9 +391,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
   }
 
   Future<void> _syncProfileToBackend(Profile profile, Legislature leg) async {
-    final url = kDebugMode 
-      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncProfile'
-      : 'https://syncprofile-wq27mxu42a-uc.a.run.app';
+    final url = Config.getFunctionUrl('syncProfile');
 
     try {
       final response = await http.post(

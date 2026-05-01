@@ -139,7 +139,10 @@ class QuizService {
       
       ridingOptions = [member.riding ?? 'Unknown'];
       ridingOptions.addAll(otherRidings);
-      ridingOptions.addAll(distractors.take(4 - ridingOptions.length));
+      final needed = 4 - ridingOptions.length;
+      if (needed > 0) {
+        ridingOptions.addAll(distractors.take(needed));
+      }
       ridingOptions.shuffle();
     }
 

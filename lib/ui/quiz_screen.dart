@@ -9,6 +9,8 @@ import '../logic/quiz_service.dart';
 import '../logic/l10n.dart';
 import '../data/database.dart';
 import 'widgets/member_image.dart';
+import '../logic/string_utils.dart';
+import '../logic/config.dart';
 
 import 'package:fsrs/fsrs.dart' as fsrs;
 
@@ -371,13 +373,11 @@ class _QuizScreenState extends State<QuizScreen> {
                   fontSize: 18,
                 ),
               ),
-              if (!_isCorrect) ...[
-                const SizedBox(height: 8),
-                Text(
-                  '${l10n.get('answer')}${question.correctAnswer}${question.ridingOptions != null ? ' (${question.member.riding})' : ''}',
-                  style: const TextStyle(fontSize: 18),
-                ),
-              ],
+              const SizedBox(height: 8),
+              Text(
+                '${l10n.get('answer')}${question.correctAnswer}${question.ridingOptions != null ? ' (${question.member.riding})' : ''}',
+                style: const TextStyle(fontSize: 18),
+              ),
             ],
           ],
         );
@@ -441,7 +441,7 @@ class _QuizScreenState extends State<QuizScreen> {
       if (question.ridingOptions != null && _selectedRiding == null) {
         return;
       }
-      final nameCorrect = answer.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
+      final nameCorrect = StringUtils.isFuzzyMatch(answer, question.correctAnswer!);
       final ridingCorrect = question.ridingOptions == null || _selectedRiding == question.member.riding;
       correct = nameCorrect && ridingCorrect;
     } else if (widget.mode == QuizMode.faceMatch) {
@@ -490,9 +490,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _syncQuizResultToBackend(Profile profile, Legislature leg, double score) async {
-    final url = kDebugMode 
-      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncQuizResult'
-      : 'https://syncquizresult-wq27mxu42a-uc.a.run.app';
+    final url = Config.getFunctionUrl('syncQuizResult');
 
     try {
       await http.post(
