@@ -4,7 +4,6 @@ import 'package:xml/xml.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html;
-import 'package:html/dom.dart' as dom;
 import '../data/database.dart';
 import 'config.dart';
 

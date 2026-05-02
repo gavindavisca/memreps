@@ -36,6 +36,7 @@ class Config {
       'proxyImage': 'https://proxyimage-wq27mxu42a-uc.a.run.app',
       'syncProfile': 'https://syncprofile-wq27mxu42a-uc.a.run.app',
       'syncQuizResult': 'https://syncquizresult-wq27mxu42a-uc.a.run.app',
+      'getLeaderboard': 'https://getleaderboard-wq27mxu42a-uc.a.run.app',
     };
 
     return productionUrls[functionName] ?? 'https://$functionName-wq27mxu42a-uc.a.run.app';

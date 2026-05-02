@@ -5,6 +5,12 @@ const axios = require("axios");
 const cors = require("cors")({ origin: true });
 
 admin.initializeApp();
+
+// Explicitly connect to Firestore emulator if running in emulator environment
+if (process.env.FUNCTIONS_EMULATOR && process.env.FIRESTORE_EMULATOR_HOST) {
+  console.log(`Functions emulator detected. Connecting to Firestore emulator at ${process.env.FIRESTORE_EMULATOR_HOST}`);
+}
+
 const db = getFirestore("memreps");
 
 exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
@@ -71,11 +77,15 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
+    // Support both string and numeric IDs for legislatureId
+    const legId = (typeof legislatureId === 'string' && !isNaN(legislatureId)) 
+      ? parseInt(legislatureId) 
+      : legislatureId;
+
+    // Use only equality filters to avoid composite index requirements
     const snapshot = await db.collection("quiz_results")
-      .where("legislatureId", "==", legislatureId)
+      .where("legislatureId", "==", legId)
       .where("quizModeId", "==", quizModeId)
-      .where("timestamp", ">=", oneWeekAgo)
-      .where("filterPercentage", ">", 0.2)
       .get();
 
     if (snapshot.empty) {
@@ -83,11 +93,20 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
       return;
     }
 
-    // Process averages in memory (since Firestore doesn't support grouping)
     const userStats = {};
 
     snapshot.forEach(doc => {
       const data = doc.data();
+      
+      // Filter by percentage (>= 20%)
+      if (data.filterPercentage < 0.2) return;
+      
+      // Filter by timestamp (last 7 days)
+      if (data.timestamp) {
+        const ts = data.timestamp.toDate();
+        if (ts < oneWeekAgo) return;
+      }
+
       const uuid = data.userUuid;
       if (!userStats[uuid]) {
         userStats[uuid] = { name: data.userName, totalScore: 0, count: 0 };
@@ -106,7 +125,7 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
 
     res.status(200).send({ leaderboard });
   } catch (error) {
-    console.error("Error fetching leaderboard:", error.message);
+    console.error("Error fetching leaderboard:", error);
     res.status(500).send("Error fetching leaderboard");
   }
 });

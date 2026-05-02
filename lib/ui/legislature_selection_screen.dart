@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../logic/app_state.dart';
@@ -9,6 +8,7 @@ import '../logic/scraper_service.dart';
 import '../logic/l10n.dart';
 import '../data/database.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../logic/config.dart';
 
 class LegislatureSelectionScreen extends StatelessWidget {
   const LegislatureSelectionScreen({super.key});
@@ -142,9 +142,7 @@ class LegislatureSelectionScreen extends StatelessWidget {
   }
 
   Future<void> _syncProfileToBackend(Profile profile, Legislature leg) async {
-    final url = kDebugMode 
-      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncProfile'
-      : 'https://syncprofile-wq27mxu42a-uc.a.run.app';
+    final url = Config.getFunctionUrl('syncProfile');
 
     try {
       await http.post(

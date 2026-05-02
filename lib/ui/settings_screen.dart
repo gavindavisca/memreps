@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +11,7 @@ import '../logic/l10n.dart';
 import '../data/database.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../logic/config.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -165,7 +165,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'v1.0.2',
+              'v1.0.3',
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
@@ -454,9 +454,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _syncProfileToBackend(Profile profile, Legislature leg) async {
-    final url = kDebugMode 
-      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/syncProfile'
-      : 'https://syncprofile-wq27mxu42a-uc.a.run.app';
+    final url = Config.getFunctionUrl('syncProfile');
 
     try {
       await http.post(

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../logic/app_state.dart';
 import '../logic/repository.dart';
 import '../data/database.dart';
+import '../logic/config.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -203,7 +203,7 @@ class _StatsScreenState extends State<StatsScreen> {
   void _showLeaderboard(BuildContext context, String modeId) {
     final appState = Provider.of<AppState>(context, listen: false);
     final l10n = appState.l10n;
-    final legId = appState.currentLegislature!.id.toString();
+    final legId = appState.currentLegislature!.id;
 
     showDialog(
       context: context,
@@ -293,10 +293,8 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Future<List<dynamic>> _fetchLeaderboard(String legislatureId, String quizModeId) async {
-    final url = kDebugMode 
-      ? 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/getLeaderboard'
-      : 'https://getleaderboard-wq27mxu42a-uc.a.run.app';
+  Future<List<dynamic>> _fetchLeaderboard(int legislatureId, String quizModeId) async {
+    final url = Config.getFunctionUrl('getLeaderboard');
 
     try {
       final response = await http.post(
