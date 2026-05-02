@@ -74,6 +74,12 @@ class Repository {
         .write(ProfilesCompanion(lastUsedAt: Value(DateTime.now())));
   }
 
+  Future<Profile> toggleNextQuizSelectionMethod(int profileId, bool currentVal) async {
+    await (db.update(db.profiles)..where((tbl) => tbl.id.equals(profileId)))
+        .write(ProfilesCompanion(nextQuizIsRandom: Value(!currentVal)));
+    return (db.select(db.profiles)..where((tbl) => tbl.id.equals(profileId))).getSingle();
+  }
+
   // Legislature Management
   Future<List<Legislature>> getLegislatures() => db.select(db.legislatures).get();
   

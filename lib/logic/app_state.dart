@@ -84,4 +84,15 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> toggleQuizSelectionMethod() async {
+    if (_currentProfile != null) {
+      final updatedProfile = await repository.toggleNextQuizSelectionMethod(
+        _currentProfile!.id, 
+        _currentProfile!.nextQuizIsRandom
+      );
+      _currentProfile = updatedProfile;
+      notifyListeners();
+    }
+  }
 }

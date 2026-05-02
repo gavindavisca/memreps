@@ -9,6 +9,7 @@ class Profiles extends Table {
   IntColumn get lastLegislatureId => integer().nullable().references(Legislatures, #id)();
   TextColumn get language => text().withDefault(const Constant('en'))();
   TextColumn get uuid => text().nullable()(); // Using nullable for migration safety
+  BoolColumn get nextQuizIsRandom => boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastUsedAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -73,7 +74,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(impl.connect());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration {
@@ -101,6 +102,10 @@ class AppDatabase extends _$AppDatabase {
         if (from < 10) {
           await m.addColumn(profiles, profiles.uuid);
         }
+        if (from < 12) {
+          await m.addColumn(profiles, profiles.nextQuizIsRandom);
+        }
+
         
         await _seedLegislatures();
       },

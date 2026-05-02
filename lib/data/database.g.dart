@@ -381,6 +381,21 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _nextQuizIsRandomMeta = const VerificationMeta(
+    'nextQuizIsRandom',
+  );
+  @override
+  late final GeneratedColumn<bool> nextQuizIsRandom = GeneratedColumn<bool>(
+    'next_quiz_is_random',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("next_quiz_is_random" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
     'lastUsedAt',
   );
@@ -411,6 +426,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     lastLegislatureId,
     language,
     uuid,
+    nextQuizIsRandom,
     lastUsedAt,
     createdAt,
   ];
@@ -458,6 +474,15 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
       );
     }
+    if (data.containsKey('next_quiz_is_random')) {
+      context.handle(
+        _nextQuizIsRandomMeta,
+        nextQuizIsRandom.isAcceptableOrUnknown(
+          data['next_quiz_is_random']!,
+          _nextQuizIsRandomMeta,
+        ),
+      );
+    }
     if (data.containsKey('last_used_at')) {
       context.handle(
         _lastUsedAtMeta,
@@ -502,6 +527,10 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
       ),
+      nextQuizIsRandom: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}next_quiz_is_random'],
+      )!,
       lastUsedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_used_at'],
@@ -525,6 +554,7 @@ class Profile extends DataClass implements Insertable<Profile> {
   final int? lastLegislatureId;
   final String language;
   final String? uuid;
+  final bool nextQuizIsRandom;
   final DateTime? lastUsedAt;
   final DateTime createdAt;
   const Profile({
@@ -533,6 +563,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     this.lastLegislatureId,
     required this.language,
     this.uuid,
+    required this.nextQuizIsRandom,
     this.lastUsedAt,
     required this.createdAt,
   });
@@ -548,6 +579,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     if (!nullToAbsent || uuid != null) {
       map['uuid'] = Variable<String>(uuid);
     }
+    map['next_quiz_is_random'] = Variable<bool>(nextQuizIsRandom);
     if (!nullToAbsent || lastUsedAt != null) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt);
     }
@@ -564,6 +596,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           : Value(lastLegislatureId),
       language: Value(language),
       uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
+      nextQuizIsRandom: Value(nextQuizIsRandom),
       lastUsedAt: lastUsedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastUsedAt),
@@ -582,6 +615,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       lastLegislatureId: serializer.fromJson<int?>(json['lastLegislatureId']),
       language: serializer.fromJson<String>(json['language']),
       uuid: serializer.fromJson<String?>(json['uuid']),
+      nextQuizIsRandom: serializer.fromJson<bool>(json['nextQuizIsRandom']),
       lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -595,6 +629,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       'lastLegislatureId': serializer.toJson<int?>(lastLegislatureId),
       'language': serializer.toJson<String>(language),
       'uuid': serializer.toJson<String?>(uuid),
+      'nextQuizIsRandom': serializer.toJson<bool>(nextQuizIsRandom),
       'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -606,6 +641,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     Value<int?> lastLegislatureId = const Value.absent(),
     String? language,
     Value<String?> uuid = const Value.absent(),
+    bool? nextQuizIsRandom,
     Value<DateTime?> lastUsedAt = const Value.absent(),
     DateTime? createdAt,
   }) => Profile(
@@ -616,6 +652,7 @@ class Profile extends DataClass implements Insertable<Profile> {
         : this.lastLegislatureId,
     language: language ?? this.language,
     uuid: uuid.present ? uuid.value : this.uuid,
+    nextQuizIsRandom: nextQuizIsRandom ?? this.nextQuizIsRandom,
     lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -628,6 +665,9 @@ class Profile extends DataClass implements Insertable<Profile> {
           : this.lastLegislatureId,
       language: data.language.present ? data.language.value : this.language,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      nextQuizIsRandom: data.nextQuizIsRandom.present
+          ? data.nextQuizIsRandom.value
+          : this.nextQuizIsRandom,
       lastUsedAt: data.lastUsedAt.present
           ? data.lastUsedAt.value
           : this.lastUsedAt,
@@ -643,6 +683,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           ..write('lastLegislatureId: $lastLegislatureId, ')
           ..write('language: $language, ')
           ..write('uuid: $uuid, ')
+          ..write('nextQuizIsRandom: $nextQuizIsRandom, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -656,6 +697,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     lastLegislatureId,
     language,
     uuid,
+    nextQuizIsRandom,
     lastUsedAt,
     createdAt,
   );
@@ -668,6 +710,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           other.lastLegislatureId == this.lastLegislatureId &&
           other.language == this.language &&
           other.uuid == this.uuid &&
+          other.nextQuizIsRandom == this.nextQuizIsRandom &&
           other.lastUsedAt == this.lastUsedAt &&
           other.createdAt == this.createdAt);
 }
@@ -678,6 +721,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<int?> lastLegislatureId;
   final Value<String> language;
   final Value<String?> uuid;
+  final Value<bool> nextQuizIsRandom;
   final Value<DateTime?> lastUsedAt;
   final Value<DateTime> createdAt;
   const ProfilesCompanion({
@@ -686,6 +730,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.lastLegislatureId = const Value.absent(),
     this.language = const Value.absent(),
     this.uuid = const Value.absent(),
+    this.nextQuizIsRandom = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -695,6 +740,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.lastLegislatureId = const Value.absent(),
     this.language = const Value.absent(),
     this.uuid = const Value.absent(),
+    this.nextQuizIsRandom = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : firstName = Value(firstName);
@@ -704,6 +750,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Expression<int>? lastLegislatureId,
     Expression<String>? language,
     Expression<String>? uuid,
+    Expression<bool>? nextQuizIsRandom,
     Expression<DateTime>? lastUsedAt,
     Expression<DateTime>? createdAt,
   }) {
@@ -713,6 +760,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       if (lastLegislatureId != null) 'last_legislature_id': lastLegislatureId,
       if (language != null) 'language': language,
       if (uuid != null) 'uuid': uuid,
+      if (nextQuizIsRandom != null) 'next_quiz_is_random': nextQuizIsRandom,
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -724,6 +772,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Value<int?>? lastLegislatureId,
     Value<String>? language,
     Value<String?>? uuid,
+    Value<bool>? nextQuizIsRandom,
     Value<DateTime?>? lastUsedAt,
     Value<DateTime>? createdAt,
   }) {
@@ -733,6 +782,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       lastLegislatureId: lastLegislatureId ?? this.lastLegislatureId,
       language: language ?? this.language,
       uuid: uuid ?? this.uuid,
+      nextQuizIsRandom: nextQuizIsRandom ?? this.nextQuizIsRandom,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -756,6 +806,9 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
+    if (nextQuizIsRandom.present) {
+      map['next_quiz_is_random'] = Variable<bool>(nextQuizIsRandom.value);
+    }
     if (lastUsedAt.present) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
     }
@@ -773,6 +826,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
           ..write('lastLegislatureId: $lastLegislatureId, ')
           ..write('language: $language, ')
           ..write('uuid: $uuid, ')
+          ..write('nextQuizIsRandom: $nextQuizIsRandom, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -3249,6 +3303,7 @@ typedef $$ProfilesTableCreateCompanionBuilder =
       Value<int?> lastLegislatureId,
       Value<String> language,
       Value<String?> uuid,
+      Value<bool> nextQuizIsRandom,
       Value<DateTime?> lastUsedAt,
       Value<DateTime> createdAt,
     });
@@ -3259,6 +3314,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder =
       Value<int?> lastLegislatureId,
       Value<String> language,
       Value<String?> uuid,
+      Value<bool> nextQuizIsRandom,
       Value<DateTime?> lastUsedAt,
       Value<DateTime> createdAt,
     });
@@ -3349,6 +3405,11 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<String> get uuid => $composableBuilder(
     column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get nextQuizIsRandom => $composableBuilder(
+    column: $table.nextQuizIsRandom,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3465,6 +3526,11 @@ class $$ProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get nextQuizIsRandom => $composableBuilder(
+    column: $table.nextQuizIsRandom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3519,6 +3585,11 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<bool> get nextQuizIsRandom => $composableBuilder(
+    column: $table.nextQuizIsRandom,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
@@ -3639,6 +3710,7 @@ class $$ProfilesTableTableManager
                 Value<int?> lastLegislatureId = const Value.absent(),
                 Value<String> language = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
+                Value<bool> nextQuizIsRandom = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ProfilesCompanion(
@@ -3647,6 +3719,7 @@ class $$ProfilesTableTableManager
                 lastLegislatureId: lastLegislatureId,
                 language: language,
                 uuid: uuid,
+                nextQuizIsRandom: nextQuizIsRandom,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
               ),
@@ -3657,6 +3730,7 @@ class $$ProfilesTableTableManager
                 Value<int?> lastLegislatureId = const Value.absent(),
                 Value<String> language = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
+                Value<bool> nextQuizIsRandom = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ProfilesCompanion.insert(
@@ -3665,6 +3739,7 @@ class $$ProfilesTableTableManager
                 lastLegislatureId: lastLegislatureId,
                 language: language,
                 uuid: uuid,
+                nextQuizIsRandom: nextQuizIsRandom,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
               ),

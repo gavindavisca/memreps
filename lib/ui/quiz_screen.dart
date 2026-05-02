@@ -102,17 +102,26 @@ class _QuizScreenState extends State<QuizScreen> {
     // 4. Build the final 10-member subset
     final List<Member> quizSubset = [];
     
-    // Priority 1: Due reviews
-    quizSubset.addAll(due.take(10).map((ms) => ms.member));
-    
-    // Priority 2: New members
-    if (quizSubset.length < 10) {
-      quizSubset.addAll(isNew.take(10 - quizSubset.length).map((ms) => ms.member));
-    }
-    
-    // Priority 3: Learned members (reviewing ahead)
-    if (quizSubset.length < 10) {
-      quizSubset.addAll(learned.take(10 - quizSubset.length).map((ms) => ms.member));
+    if (appState.currentProfile!.nextQuizIsRandom) {
+      // Priority: Purely Random (from filtered set)
+      final randomPool = filtered.map((ms) => ms.member).toList()..shuffle();
+      quizSubset.addAll(randomPool.take(10));
+      debugPrint('Quiz Selection Method: Random');
+    } else {
+      // Priority: FSRS (Due -> New -> Learned)
+      // Priority 1: Due reviews
+      quizSubset.addAll(due.take(10).map((ms) => ms.member));
+      
+      // Priority 2: New members
+      if (quizSubset.length < 10) {
+        quizSubset.addAll(isNew.take(10 - quizSubset.length).map((ms) => ms.member));
+      }
+      
+      // Priority 3: Learned members (reviewing ahead)
+      if (quizSubset.length < 10) {
+        quizSubset.addAll(learned.take(10 - quizSubset.length).map((ms) => ms.member));
+      }
+      debugPrint('Quiz Selection Method: FSRS');
     }
 
     try {
@@ -487,6 +496,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
     // 2. Backend Sync
     await _syncQuizResultToBackend(profile, leg, score);
+
+    // 3. Toggle Selection Method for next time
+    await appState.toggleQuizSelectionMethod();
   }
 
   Future<void> _syncQuizResultToBackend(Profile profile, Legislature leg, double score) async {
