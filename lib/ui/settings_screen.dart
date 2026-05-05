@@ -11,6 +11,7 @@ import '../logic/l10n.dart';
 import '../data/database.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:share_plus/share_plus.dart';
 import '../logic/config.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -121,6 +122,20 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
+          const SizedBox(height: 32),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Share.share(l10n.get('share_message_app'));
+              },
+              icon: const Icon(Icons.share),
+              label: Text(l10n.get('recommend_to_colleague')),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(250, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
           const SizedBox(height: 48),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,

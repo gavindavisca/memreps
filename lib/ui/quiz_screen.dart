@@ -12,6 +12,7 @@ import '../logic/string_utils.dart';
 import '../logic/config.dart';
 
 import 'package:fsrs/fsrs.dart' as fsrs;
+import 'package:share_plus/share_plus.dart';
 
 class QuizScreen extends StatefulWidget {
   final QuizMode mode;
@@ -581,6 +582,20 @@ class _QuizScreenState extends State<QuizScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: Text(l10n.get('finish')),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () {
+                final appState = Provider.of<AppState>(context, listen: false);
+                final score = (_correctCount / _questions.length * 100).round();
+                final legName = appState.currentLegislature?.name ?? 'Canada';
+                final message = appState.currentProfile?.language == 'fr'
+                    ? 'Je viens de marquer $score% au quiz $legName sur MemReps ! Pouvez-vous battre mon score ? 🇨🇦 https://gavindavis.ca/memreps'
+                    : 'I just scored $score% on the $legName quiz on MemReps! Can you beat my score? 🇨🇦 https://gavindavis.ca/memreps';
+                Share.share(message);
+              },
+              icon: const Icon(Icons.share),
+              label: Text(l10n.get('share_result')),
             ),
           ],
         ),

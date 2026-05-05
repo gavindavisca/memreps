@@ -71,6 +71,10 @@ class L10n {
       'close': 'Close',
       'loading_reps': 'Loading representatives...',
       'enhancing_status': 'Enhancing with latest status...',
+      'share': 'Share',
+      'share_result': 'Share Result',
+      'recommend_to_colleague': 'Recommend to a Colleague',
+      'share_message_app': 'Check out MemReps! It\'s a great way to memorize the names of Canadian MPs and Senators. 🇨🇦 https://gavindavis.ca/memreps',
     },
     'fr': {
       'welcome': 'Bienvenue!',
@@ -143,6 +147,10 @@ class L10n {
       'close': 'Fermer',
       'loading_reps': 'Chargement des représentants...',
       'enhancing_status': 'Amélioration avec le dernier statut...',
+      'share': 'Partager',
+      'share_result': 'Partager le résultat',
+      'recommend_to_colleague': 'Recommander à un collègue',
+      'share_message_app': 'Découvrez MemReps ! C\'est un excellent moyen de mémoriser les noms des députés et sénateurs canadiens. 🇨🇦 https://gavindavis.ca/memreps',
     },
   };
 
