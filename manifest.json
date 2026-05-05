@@ -1,11 +1,11 @@
 {
-    "name": "Memorize Representatives",
-    "short_name": "Mem Reps",
+    "name": "MemReps - Canadian Representative Flashcards",
+    "short_name": "MemReps",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "Memorize Canadian Representatives",
+    "background_color": "#1E3A8A",
+    "theme_color": "#1E3A8A",
+    "description": "Flashcard app for Canadian Parliamentary and Legislative Pages to study MPs and Senators.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
