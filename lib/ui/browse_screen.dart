@@ -5,6 +5,7 @@ import '../logic/repository.dart';
 import '../data/database.dart';
 import '../logic/l10n.dart';
 import 'widgets/member_image.dart';
+import '../logic/string_utils.dart';
 
 
 enum SortOption { lastName, leastMemorized, mostMemorized }
@@ -147,11 +148,10 @@ class _BrowseScreenState extends State<BrowseScreen> {
               
               // Apply Search
               if (_searchQuery.isNotEmpty) {
-                final q = _searchQuery.toLowerCase();
                 items = items.where((i) => 
-                  i.member.firstName.toLowerCase().contains(q) || 
-                  i.member.lastName.toLowerCase().contains(q) ||
-                  (i.member.riding?.toLowerCase().contains(q) ?? false)
+                  StringUtils.isFuzzySearch(_searchQuery, i.member.firstName) || 
+                  StringUtils.isFuzzySearch(_searchQuery, i.member.lastName) ||
+                  (i.member.riding != null && StringUtils.isFuzzySearch(_searchQuery, i.member.riding!))
                 ).toList();
               }
               

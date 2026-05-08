@@ -4,6 +4,7 @@ import 'package:xml/xml.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html;
+import 'string_utils.dart';
 import '../data/database.dart';
 import 'config.dart';
 
@@ -197,8 +198,8 @@ class ScraperService {
         final offRiding = node.findElements('ConstituencyName').first.innerText;
         final offParty = node.findElements('CaucusShortName').first.innerText;
         
-        final lastNameClean = offLastName.replaceAll(' ', '');
-        final firstNameClean = offFirstName.replaceAll(' ', '');
+        final lastNameClean = StringUtils.removeAccents(offLastName).replaceAll(' ', '');
+        final firstNameClean = StringUtils.removeAccents(offFirstName).replaceAll(' ', '');
         final partyCode = _getHouseOfCommonsPartyCode(offParty);
         final officialImageUrl = 'https://www.ourcommons.ca/Content/Parliamentarians/Images/OfficialMPPhotos/45/$lastNameClean${firstNameClean}_$partyCode.jpg';
 

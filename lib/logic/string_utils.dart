@@ -1,19 +1,23 @@
 import 'dart:math';
 
 class StringUtils {
-  /// Normalizes a string by trimming, converting to lowercase, 
-  /// and removing common accents/diacritics.
-  static String normalize(String str) {
-    var result = str.trim().toLowerCase();
+  /// Removes common accents/diacritics from a string while preserving case.
+  static String removeAccents(String str) {
+    var result = str;
     
     // Manual mapping of common accented characters found in Canadian names
     const accents = {
       'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
+      'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A', 'Å': 'A',
       'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+      'È': 'E', 'É': 'E', 'Ê': 'E', 'Ë': 'E',
       'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+      'Ì': 'I', 'Í': 'I', 'Î': 'I', 'Ï': 'I',
       'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
+      'Ò': 'O', 'Ó': 'O', 'Ô': 'O', 'Õ': 'O', 'Ö': 'O',
       'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
-      'ç': 'c', 'ñ': 'n',
+      'Ù': 'U', 'Ú': 'U', 'Û': 'U', 'Ü': 'U',
+      'ç': 'c', 'Ç': 'C', 'ñ': 'n', 'Ñ': 'N',
     };
 
     accents.forEach((key, value) {
@@ -21,6 +25,12 @@ class StringUtils {
     });
 
     return result;
+  }
+
+  /// Normalizes a string by trimming, converting to lowercase, 
+  /// and removing common accents/diacritics.
+  static String normalize(String str) {
+    return removeAccents(str.trim().toLowerCase());
   }
 
   /// Calculates the Levenshtein distance between two strings.
@@ -68,5 +78,17 @@ class StringUtils {
     if (s2.length <= 3) return distance == 0;
     if (s2.length <= 7) return distance <= 1;
     return distance <= 2;
+  }
+
+  /// Checks if a query matches a target string either as a substring (after normalization)
+  /// or as a fuzzy match. This is ideal for search boxes.
+  static bool isFuzzySearch(String query, String target) {
+    final normalizedQ = normalize(query);
+    if (normalizedQ.isEmpty) return true;
+    
+    final normalizedT = normalize(target);
+    if (normalizedT.contains(normalizedQ)) return true;
+    
+    return isFuzzyMatch(query, target);
   }
 }
