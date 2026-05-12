@@ -107,91 +107,122 @@ class _BrowseScreenState extends State<BrowseScreen> {
           ),
         ],
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: l10n.get('search_members'),
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-                      filled: true,
-                      contentPadding: EdgeInsets.zero,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate column count dynamically based on a max cross-axis extent of 220px
+          final columns = (constraints.maxWidth / 220).ceil().clamp(1, 10);
+
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: l10n.get('search_members'),
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                          filled: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (val) => setState(() => _searchQuery = val),
+                      ),
                     ),
-                    onChanged: (val) => setState(() => _searchQuery = val),
                   ),
                 ),
               ),
-            ),
-          ),
-          if (_showFilters)
-            SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: _buildFilterPanel(repository, legislatureId, l10n),
+              if (_showFilters)
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: _buildFilterPanel(repository, legislatureId, l10n),
+                    ),
+                  ),
                 ),
+              FutureBuilder<List<MemberWithStats>>(
+                future: repository.getMembersWithStats(appState.currentProfile!.id, legislatureId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
+                  }
+                  
+                  var items = snapshot.data ?? [];
+                  
+                  // Apply Filter
+                  if (_selectedParty != null) {
+                    items = items.where((i) => i.member.party == _selectedParty).toList();
+                  }
+                  if (_selectedRegion != null) {
+                    items = items.where((i) => i.member.region == _selectedRegion).toList();
+                  }
+                  
+                  // Apply Search
+                  if (_searchQuery.isNotEmpty) {
+                    items = items.where((i) => 
+                      StringUtils.isFuzzySearch(_searchQuery, i.member.firstName) || 
+                      StringUtils.isFuzzySearch(_searchQuery, i.member.lastName) ||
+                      (i.member.riding != null && StringUtils.isFuzzySearch(_searchQuery, i.member.riding!))
+                    ).toList();
+                  }
+                  
+                  // Apply Sort
+                  _sortMembers(items);
+
+                  if (items.isEmpty) {
+                    return SliverFillRemaining(
+                      child: Center(child: Text(l10n.get('no_members'))),
+                    );
+                  }
+
+                  final rowCount = (items.length / columns).ceil();
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverList.builder(
+                      itemCount: rowCount,
+                      itemBuilder: (context, rowIndex) {
+                        final startIndex = rowIndex * columns;
+                        final rowItems = <Widget>[];
+
+                        for (int i = 0; i < columns; i++) {
+                          final itemIndex = startIndex + i;
+                          if (itemIndex < items.length) {
+                            rowItems.add(
+                              Expanded(
+                                child: _buildMemberCard(items[itemIndex]),
+                              ),
+                            );
+                          } else {
+                            rowItems.add(const Expanded(child: SizedBox.shrink()));
+                          }
+
+                          if (i < columns - 1) {
+                            rowItems.add(const SizedBox(width: 16));
+                          }
+                        }
+
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: rowIndex < rowCount - 1 ? 16 : 0),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: rowItems,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
-            ),
-          FutureBuilder<List<MemberWithStats>>(
-            future: repository.getMembersWithStats(appState.currentProfile!.id, legislatureId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
-              }
-              
-              var items = snapshot.data ?? [];
-              
-              // Apply Filter
-              if (_selectedParty != null) {
-                items = items.where((i) => i.member.party == _selectedParty).toList();
-              }
-              if (_selectedRegion != null) {
-                items = items.where((i) => i.member.region == _selectedRegion).toList();
-              }
-              
-              // Apply Search
-              if (_searchQuery.isNotEmpty) {
-                items = items.where((i) => 
-                  StringUtils.isFuzzySearch(_searchQuery, i.member.firstName) || 
-                  StringUtils.isFuzzySearch(_searchQuery, i.member.lastName) ||
-                  (i.member.riding != null && StringUtils.isFuzzySearch(_searchQuery, i.member.riding!))
-                ).toList();
-              }
-              
-              // Apply Sort
-              _sortMembers(items);
-
-              if (items.isEmpty) {
-                return SliverFillRemaining(
-                  child: Center(child: Text(l10n.get('no_members'))),
-                );
-              }
-
-              return SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 220,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    mainAxisExtent: 380,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildMemberCard(items[index]),
-                    childCount: items.length,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -270,6 +301,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
         child: Stack(
           children: [
             Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AspectRatio(
