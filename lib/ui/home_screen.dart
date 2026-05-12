@@ -30,33 +30,71 @@ class _HomeScreenState extends State<HomeScreen> {
       const SettingsScreen(),
     ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: appState.currentTabIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: appState.currentTabIndex,
-        onDestinationSelected: (index) => appState.setTabIndex(index),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.search_rounded),
-            label: appState.l10n.get('browse'),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 700;
+
+        return Scaffold(
+          body: Row(
+            children: [
+              if (isWide)
+                NavigationRail(
+                  selectedIndex: appState.currentTabIndex,
+                  onDestinationSelected: (index) => appState.setTabIndex(index),
+                  labelType: NavigationRailLabelType.all,
+                  destinations: [
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.search_rounded),
+                      label: Text(appState.l10n.get('browse')),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.school_rounded),
+                      label: Text(appState.l10n.get('quiz')),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.bar_chart_rounded),
+                      label: Text(appState.l10n.get('results')),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.settings_rounded),
+                      label: Text(appState.l10n.get('settings')),
+                    ),
+                  ],
+                ),
+              Expanded(
+                child: IndexedStack(
+                  index: appState.currentTabIndex,
+                  children: screens,
+                ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.school_rounded),
-            label: appState.l10n.get('quiz'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.bar_chart_rounded),
-            label: appState.l10n.get('results'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_rounded),
-            label: appState.l10n.get('settings'),
-          ),
-        ],
-      ),
+          bottomNavigationBar: isWide
+              ? null
+              : NavigationBar(
+                  selectedIndex: appState.currentTabIndex,
+                  onDestinationSelected: (index) => appState.setTabIndex(index),
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.search_rounded),
+                      label: appState.l10n.get('browse'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.school_rounded),
+                      label: appState.l10n.get('quiz'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.bar_chart_rounded),
+                      label: appState.l10n.get('results'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.settings_rounded),
+                      label: appState.l10n.get('settings'),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 }

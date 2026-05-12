@@ -189,32 +189,81 @@ class _QuizScreenState extends State<QuizScreen> {
       appBar: AppBar(
         title: Text('${l10n.get(_getModeKey())} - ${_currentIndex + 1}/${_questions.length}'),
       ),
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-            child: Column(
-              children: [
-                _buildQuestionCard(question, l10n),
-                const SizedBox(height: 16),
-                _buildInputArea(question, l10n),
-                if (_isAnswered) ...[
-                  const SizedBox(height: 16),
-                  if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
-                    Text(
-                      '${question.member.firstName} ${question.member.lastName}',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 800;
+
+          if (isWide) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: _buildQuestionCard(question, l10n, isWide: true),
+                      ),
+                      const SizedBox(width: 48),
+                      Expanded(
+                        flex: 1,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildInputArea(question, l10n),
+                              if (_isAnswered) ...[
+                                const SizedBox(height: 24),
+                                if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
+                                  Text(
+                                    '${question.member.firstName} ${question.member.lastName}',
+                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                _buildNextButton(l10n, isWide: true),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: Column(
+                  children: [
+                    _buildQuestionCard(question, l10n, isWide: false),
+                    const SizedBox(height: 16),
+                    _buildInputArea(question, l10n),
+                    if (_isAnswered) ...[
+                      const SizedBox(height: 16),
+                      if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
+                        Text(
+                          '${question.member.firstName} ${question.member.lastName}',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      _buildNextButton(l10n, isWide: false),
+                    ],
                   ],
-                  _buildNextButton(l10n),
-                ],
-              ],
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -229,10 +278,10 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Widget _buildQuestionCard(QuizQuestion question, L10n l10n) {
+  Widget _buildQuestionCard(QuizQuestion question, L10n l10n, {required bool isWide}) {
     if (widget.mode == QuizMode.faceMatch) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        padding: EdgeInsets.symmetric(horizontal: isWide ? 0 : 20.0),
         child: Card(
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -271,17 +320,24 @@ class _QuizScreenState extends State<QuizScreen> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: AspectRatio(
-        aspectRatio: 4 / 5,
-        child: Card(
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: MemberImage(
-            imageUrl: question.member.imageUrl,
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isWide ? 300 : double.infinity,
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: isWide ? 0 : 20.0),
+          child: AspectRatio(
+            aspectRatio: 4 / 5,
+            child: Card(
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              child: MemberImage(
+                imageUrl: question.member.imageUrl,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              ),
+            ),
           ),
         ),
       ),
@@ -392,11 +448,14 @@ class _QuizScreenState extends State<QuizScreen> {
         );
 
       case QuizMode.faceMatch:
-        return Column(
-          children: [
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 362),
+            child: Column(
+              children: [
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
@@ -434,7 +493,9 @@ class _QuizScreenState extends State<QuizScreen> {
               },
             ),
           ],
-        );
+        ),
+      ),
+    );
     }
   }
 
@@ -524,34 +585,38 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Widget _buildNextButton(L10n l10n) {
+  Widget _buildNextButton(L10n l10n, {required bool isWide}) {
+    final button = ElevatedButton(
+      onPressed: () {
+        FocusScope.of(context).unfocus();
+        if (_currentIndex < _questions.length - 1) {
+          setState(() {
+            _currentIndex++;
+            _isAnswered = false;
+            _selectedAnswer = null;
+            _selectedRiding = null;
+            _textController.clear();
+          });
+        } else {
+          _saveQuizResult();
+          setState(() {
+            _currentIndex++;
+          });
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size.fromHeight(isWide ? 64 : 56),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      child: Text(_currentIndex < _questions.length - 1 ? l10n.get('next') : l10n.get('finish')),
+    );
+
+    if (isWide) return button;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-        child: ElevatedButton(
-          onPressed: () {
-            FocusScope.of(context).unfocus();
-            if (_currentIndex < _questions.length - 1) {
-              setState(() {
-                _currentIndex++;
-                _isAnswered = false;
-                _selectedAnswer = null;
-                _selectedRiding = null;
-                _textController.clear();
-              });
-            } else {
-              _saveQuizResult();
-              setState(() {
-                _currentIndex++;
-              });
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(56),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-          child: Text(_currentIndex < _questions.length - 1 ? l10n.get('next') : l10n.get('finish')),
-        ),
+        child: button,
       ),
     );
   }

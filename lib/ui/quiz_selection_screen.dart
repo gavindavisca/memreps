@@ -37,56 +37,133 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_showFilters) ...[
-              _buildSubsetSelector(repository, leg.id),
-              const SizedBox(height: 24),
-            ],
-            _buildModeCard(
-              context,
-              l10n.get('name_match'),
-              l10n.get('name_match_desc'),
-              Icons.format_list_bulleted_rounded,
-              QuizMode.nameMatch,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 700;
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_showFilters) ...[
+                      _buildSubsetSelector(repository, leg.id),
+                      const SizedBox(height: 24),
+                    ],
+                    if (isWide) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildModeCard(
+                              context,
+                              l10n.get('name_match'),
+                              l10n.get('name_match_desc'),
+                              Icons.format_list_bulleted_rounded,
+                              QuizMode.nameMatch,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildModeCard(
+                              context,
+                              l10n.get('party_match'),
+                              l10n.get('party_match_desc'),
+                              Icons.groups_rounded,
+                              QuizMode.partyMatch,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildModeCard(
+                              context,
+                              l10n.get('riding_match'),
+                              l10n.get('riding_match_desc'),
+                              Icons.map_rounded,
+                              QuizMode.ridingMatch,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildModeCard(
+                              context,
+                              l10n.get('face_match'),
+                              l10n.get('face_match_desc'),
+                              Icons.face_retouching_natural_rounded,
+                              QuizMode.faceMatch,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildModeCard(
+                              context,
+                              l10n.get('name_recall'),
+                              l10n.get('name_recall_desc'),
+                              Icons.keyboard_rounded,
+                              QuizMode.nameRecall,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Spacer(),
+                        ],
+                      ),
+                    ] else ...[
+                      _buildModeCard(
+                        context,
+                        l10n.get('name_match'),
+                        l10n.get('name_match_desc'),
+                        Icons.format_list_bulleted_rounded,
+                        QuizMode.nameMatch,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModeCard(
+                        context,
+                        l10n.get('party_match'),
+                        l10n.get('party_match_desc'),
+                        Icons.groups_rounded,
+                        QuizMode.partyMatch,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModeCard(
+                        context,
+                        l10n.get('riding_match'),
+                        l10n.get('riding_match_desc'),
+                        Icons.map_rounded,
+                        QuizMode.ridingMatch,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModeCard(
+                        context,
+                        l10n.get('face_match'),
+                        l10n.get('face_match_desc'),
+                        Icons.face_retouching_natural_rounded,
+                        QuizMode.faceMatch,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModeCard(
+                        context,
+                        l10n.get('name_recall'),
+                        l10n.get('name_recall_desc'),
+                        Icons.keyboard_rounded,
+                        QuizMode.nameRecall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            _buildModeCard(
-              context,
-              l10n.get('party_match'),
-              l10n.get('party_match_desc'),
-              Icons.groups_rounded,
-              QuizMode.partyMatch,
-            ),
-            const SizedBox(height: 16),
-            _buildModeCard(
-              context,
-              l10n.get('riding_match'),
-              l10n.get('riding_match_desc'),
-              Icons.map_rounded,
-              QuizMode.ridingMatch,
-            ),
-            const SizedBox(height: 16),
-            _buildModeCard(
-              context,
-              l10n.get('face_match'),
-              l10n.get('face_match_desc'),
-              Icons.face_retouching_natural_rounded,
-              QuizMode.faceMatch,
-            ),
-            const SizedBox(height: 16),
-            _buildModeCard(
-              context,
-              l10n.get('name_recall'),
-              l10n.get('name_recall_desc'),
-              Icons.keyboard_rounded,
-              QuizMode.nameRecall,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

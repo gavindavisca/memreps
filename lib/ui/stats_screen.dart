@@ -85,14 +85,19 @@ class _StatsScreenState extends State<StatsScreen> {
             return const Center(child: Text("No relevant quiz data found."));
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: displayModes.length,
-            itemBuilder: (context, index) {
-              final modeId = displayModes[index];
-              final results = grouped[modeId]!;
-              return _buildModeChart(modeId, results, l10n);
-            },
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: displayModes.length,
+                itemBuilder: (context, index) {
+                  final modeId = displayModes[index];
+                  final results = grouped[modeId]!;
+                  return _buildModeChart(modeId, results, l10n);
+                },
+              ),
+            ),
           );
         },
       ),
@@ -144,7 +149,7 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
             const SizedBox(height: 4),
             SizedBox(
-              height: 100,
+              height: 150,
               child: LineChart(
                 LineChartData(
                   gridData: FlGridData(
@@ -241,7 +246,7 @@ class _StatsScreenState extends State<StatsScreen> {
             }
 
             return SizedBox(
-              width: double.maxFinite,
+              width: 400,
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: entries.length,

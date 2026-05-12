@@ -110,24 +110,34 @@ class _BrowseScreenState extends State<BrowseScreen> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: l10n.get('search_members'),
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-                  filled: true,
-                  contentPadding: EdgeInsets.zero,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: l10n.get('search_members'),
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                      filled: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                  ),
                 ),
-                onChanged: (val) => setState(() => _searchQuery = val),
               ),
             ),
           ),
           if (_showFilters)
             SliverToBoxAdapter(
-              child: _buildFilterPanel(repository, legislatureId, l10n),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: _buildFilterPanel(repository, legislatureId, l10n),
+                ),
+              ),
             ),
           FutureBuilder<List<MemberWithStats>>(
             future: repository.getMembersWithStats(appState.currentProfile!.id, legislatureId),
@@ -166,29 +176,16 @@ class _BrowseScreenState extends State<BrowseScreen> {
 
               return SliverPadding(
                 padding: const EdgeInsets.all(16),
-                sliver: SliverList(
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 220,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    mainAxisExtent: 380,
+                  ),
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final leftIndex = index * 2;
-                      final rightIndex = index * 2 + 1;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(child: _buildMemberCard(items[leftIndex])),
-                              const SizedBox(width: 16),
-                              if (rightIndex < items.length)
-                                Expanded(child: _buildMemberCard(items[rightIndex]))
-                              else
-                                const Expanded(child: SizedBox.shrink()),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: (items.length / 2).ceil(),
+                    (context, index) => _buildMemberCard(items[index]),
+                    childCount: items.length,
                   ),
                 ),
               );

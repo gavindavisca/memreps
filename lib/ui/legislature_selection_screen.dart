@@ -43,25 +43,30 @@ class LegislatureSelectionScreen extends StatelessWidget {
           
           final legislatures = snapshot.data ?? [];
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: legislatures.length,
-            itemBuilder: (context, index) {
-              final leg = legislatures[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  title: Text(
-                    leg.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  trailing: const Icon(Icons.download_rounded),
-                  onTap: () => _handleSelection(context, leg, appState, repository, scraper, l10n),
-                ),
-              );
-            },
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: legislatures.length,
+                itemBuilder: (context, index) {
+                  final leg = legislatures[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      title: Text(
+                        leg.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                      trailing: const Icon(Icons.download_rounded),
+                      onTap: () => _handleSelection(context, leg, appState, repository, scraper, l10n),
+                    ),
+                  );
+                },
+              ),
+            ),
           );
         },
       ),

@@ -176,173 +176,183 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
   }
 
   Widget _buildOnboarding(BuildContext context, AppState appState, L10n l10n) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 40),
-          Icon(
-            Icons.person_add_rounded,
-            size: 80,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.get('welcome'),
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.get('start_memorizing'),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: l10n.get('first_name'),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              prefixIcon: const Icon(Icons.badge),
-            ),
-          ),
-          const SizedBox(height: 24),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedLanguage,
-            decoration: InputDecoration(
-              labelText: l10n.get('language'),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              prefixIcon: const Icon(Icons.language),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'en', child: Text('English')),
-              DropdownMenuItem(value: 'fr', child: Text('Français')),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 40),
+              Icon(
+                Icons.person_add_rounded,
+                size: 80,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                l10n.get('welcome'),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.get('start_memorizing'),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: l10n.get('first_name'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  prefixIcon: const Icon(Icons.badge),
+                ),
+              ),
+              const SizedBox(height: 24),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedLanguage,
+                decoration: InputDecoration(
+                  labelText: l10n.get('language'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  prefixIcon: const Icon(Icons.language),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'en', child: Text('English')),
+                  DropdownMenuItem(value: 'fr', child: Text('Français')),
+                ],
+                onChanged: (val) => setState(() => _selectedLanguage = val!),
+              ),
+              const SizedBox(height: 24),
+              DropdownButtonFormField<Legislature>(
+                isExpanded: true,
+                initialValue: _selectedLegislature,
+                decoration: InputDecoration(
+                  labelText: l10n.get('legislature'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  prefixIcon: const Icon(Icons.account_balance),
+                ),
+                items: _legislatures.map((l) => DropdownMenuItem(
+                  value: l,
+                  child: Text(
+                    l.name,
+                    style: const TextStyle(fontSize: 14),
+                    softWrap: true,
+                  ),
+                )).toList(),
+                onChanged: (val) => setState(() => _selectedLegislature = val),
+              ),
+              const SizedBox(height: 24),
+              if (!_isVerified) ...[
+                OutlinedButton.icon(
+                  onPressed: _isVerifying ? null : _verifyHuman,
+                  icon: _isVerifying 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.security),
+                  label: Text(_isVerifying ? 'Verifying...' : 'Verify you are human'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size.fromHeight(56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              ElevatedButton(
+                onPressed: (_nameController.text.trim().isEmpty || !_isVerified) ? null : () => _createProfile(appState),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: Text(l10n.get('start')),
+              ),
+              if (_isCreating)
+                TextButton(
+                  onPressed: () => setState(() => _isCreating = false),
+                  child: Text(l10n.get('cancel')),
+                ),
             ],
-            onChanged: (val) => setState(() => _selectedLanguage = val!),
           ),
-          const SizedBox(height: 24),
-          DropdownButtonFormField<Legislature>(
-            isExpanded: true,
-            initialValue: _selectedLegislature,
-            decoration: InputDecoration(
-              labelText: l10n.get('legislature'),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              prefixIcon: const Icon(Icons.account_balance),
-            ),
-            items: _legislatures.map((l) => DropdownMenuItem(
-              value: l,
-              child: Text(
-                l.name,
-                style: const TextStyle(fontSize: 14),
-                softWrap: true,
-              ),
-            )).toList(),
-            onChanged: (val) => setState(() => _selectedLegislature = val),
-          ),
-          const SizedBox(height: 24),
-          if (!_isVerified) ...[
-            OutlinedButton.icon(
-              onPressed: _isVerifying ? null : _verifyHuman,
-              icon: _isVerifying 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.security),
-              label: Text(_isVerifying ? 'Verifying...' : 'Verify you are human'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-          ElevatedButton(
-            onPressed: (_nameController.text.trim().isEmpty || !_isVerified) ? null : () => _createProfile(appState),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            child: Text(l10n.get('start')),
-          ),
-          if (_isCreating)
-            TextButton(
-              onPressed: () => setState(() => _isCreating = false),
-              child: Text(l10n.get('cancel')),
-            ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildProfileList(BuildContext context, List<Profile> profiles, AppState appState) {
     final l10n = appState.l10n;
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.get('whos_learning'),
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: ListView.builder(
-              itemCount: profiles.length,
-              itemBuilder: (context, index) {
-                final profile = profiles[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        profile.firstName[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    title: Text(
-                      profile.firstName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(profile.language == 'fr' ? 'Français' : 'English'),
-                        if (profile.lastLegislatureId != null)
-                          Text(
-                            _legislatures.firstWhere(
-                              (l) => l.id == profile.lastLegislatureId,
-                              orElse: () => _legislatures.isNotEmpty ? _legislatures.first : Legislature(id: 0, name: '', openNorthId: '')
-                            ).name,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-                            ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.get('whos_learning'),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: profiles.length,
+                  itemBuilder: (context, index) {
+                    final profile = profiles[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        leading: CircleAvatar(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          child: Text(
+                            profile.firstName[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
                           ),
-                      ],
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => appState.setCurrentProfile(profile),
-                  ),
-                );
-              },
-            ),
+                        ),
+                        title: Text(
+                          profile.firstName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(profile.language == 'fr' ? 'Français' : 'English'),
+                            if (profile.lastLegislatureId != null)
+                              Text(
+                                _legislatures.firstWhere(
+                                  (l) => l.id == profile.lastLegislatureId,
+                                  orElse: () => _legislatures.isNotEmpty ? _legislatures.first : Legislature(id: 0, name: '', openNorthId: '')
+                                ).name,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                                ),
+                              ),
+                          ],
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => appState.setCurrentProfile(profile),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => setState(() => _isCreating = true),
+                icon: const Icon(Icons.add),
+                label: Text(l10n.get('add_profile')),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton.icon(
-            onPressed: () => setState(() => _isCreating = true),
-            icon: const Icon(Icons.add),
-            label: Text(l10n.get('add_profile')),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
