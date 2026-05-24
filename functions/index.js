@@ -1,5 +1,6 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { RecaptchaEnterpriseServiceClient } = require("@google-cloud/recaptcha-enterprise");
 const admin = require("firebase-admin");
 const axios = require("axios");
 const cors = require("cors")({ origin: true });
@@ -12,9 +13,61 @@ if (process.env.FUNCTIONS_EMULATOR && process.env.FIRESTORE_EMULATOR_HOST) {
 }
 
 const db = getFirestore("memreps");
+const recaptchaClient = new RecaptchaEnterpriseServiceClient();
+
+async function verifyRecaptchaToken(token) {
+  // If running in the Firebase Functions emulator, bypass reCAPTCHA verification.
+  if (process.env.FUNCTIONS_EMULATOR) {
+    console.log("Functions emulator detected. Bypassing reCAPTCHA verification.");
+    return { valid: true, score: 1.0 };
+  }
+
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
+  if (!projectId) {
+    console.error("GCLOUD_PROJECT environment variable is not set.");
+    return { valid: false, score: 0, reason: "Missing project ID on server" };
+  }
+
+  const siteKey = "6Lf07s4sAAAAALoVLAHH-cTu37py7XhutcCPsFUR";
+  const projectPath = recaptchaClient.projectPath(projectId);
+
+  const request = {
+    assessment: {
+      event: {
+        token: token,
+        siteKey: siteKey,
+      },
+    },
+    parent: projectPath,
+  };
+
+  try {
+    const [response] = await recaptchaClient.createAssessment(request);
+
+    if (!response.tokenProperties || !response.tokenProperties.valid) {
+      const reason = response.tokenProperties 
+        ? response.tokenProperties.invalidReason 
+        : "Unknown verification failure";
+      console.warn(`reCAPTCHA token invalid. Reason: ${reason}`);
+      return { valid: false, score: 0, reason };
+    }
+
+    if (response.tokenProperties.action !== 'onboarding') {
+      console.warn(`reCAPTCHA action mismatch: expected 'onboarding', got '${response.tokenProperties.action}'`);
+      return { valid: false, score: 0, reason: "Action mismatch" };
+    }
+
+    const score = response.riskAnalysis ? response.riskAnalysis.score : 0;
+    console.log(`reCAPTCHA assessment success. Score: ${score}`);
+    return { valid: true, score };
+  } catch (error) {
+    console.error("Error creating reCAPTCHA assessment:", error);
+    return { valid: false, score: 0, reason: error.message };
+  }
+}
 
 exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
-  const { uuid, firstName, language, legislatureId, legislatureName } = req.body;
+  const { uuid, firstName, language, legislatureId, legislatureName, recaptchaToken } = req.body;
   
   if (!uuid || !firstName) {
     res.status(400).send("Missing required fields");
@@ -22,7 +75,26 @@ exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
   }
 
   try {
-    await db.collection("users").doc(uuid).set({
+    const docRef = db.collection("users").doc(uuid);
+    const docSnap = await docRef.get();
+
+    // Enforce reCAPTCHA token verification only for new profiles
+    if (!docSnap.exists) {
+      if (!recaptchaToken) {
+        console.warn(`Registration blocked: Missing reCAPTCHA token for new user ${uuid}`);
+        res.status(400).send("Missing reCAPTCHA token verification");
+        return;
+      }
+
+      const verification = await verifyRecaptchaToken(recaptchaToken);
+      if (!verification.valid || verification.score < 0.5) {
+        console.warn(`Registration blocked: reCAPTCHA verification failed for new user ${uuid}. Reason: ${verification.reason || 'Low score'}`);
+        res.status(403).send("reCAPTCHA verification failed");
+        return;
+      }
+    }
+
+    await docRef.set({
       firstName,
       language,
       legislatureId,

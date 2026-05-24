@@ -28,6 +28,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
   Future<List<Profile>>? _profilesFuture;
   bool _isVerified = false;
   bool _isVerifying = false;
+  String? _recaptchaToken;
   final String _siteKey = '6Lf07s4sAAAAALoVLAHH-cTu37py7XhutcCPsFUR';
 
   @override
@@ -58,7 +59,10 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
     try {
       final token = await RecaptchaService.execute(_siteKey, 'onboarding');
       if (token != null && token.isNotEmpty) {
-        setState(() => _isVerified = true);
+        setState(() {
+          _recaptchaToken = token;
+          _isVerified = true;
+        });
       }
     } catch (e) {
       debugPrint('Recaptcha Enterprise verification failed: $e');
@@ -213,6 +217,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: _selectedLanguage,
                 decoration: InputDecoration(
                   labelText: l10n.get('language'),
@@ -412,6 +417,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
           'language': profile.language,
           'legislatureId': leg.id,
           'legislatureName': leg.name,
+          'recaptchaToken': _recaptchaToken,
         }),
       );
 
