@@ -68,12 +68,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
     // 2.5 Filter for duplicates if requested
     if (widget.duplicateLastNamesOnly) {
-      final counts = <String, int>{};
-      for (final ms in membersWithStats) {
-        final name = ms.member.lastName.toLowerCase().trim();
-        counts[name] = (counts[name] ?? 0) + 1;
-      }
-      filtered = filtered.where((ms) => counts[ms.member.lastName.toLowerCase().trim()]! > 1).toList();
+      filtered = filtered.where((ms) {
+        return membersWithStats.any((other) =>
+            other.member.id != ms.member.id &&
+            StringUtils.isDuplicateLastName(ms.member.lastName, other.member.lastName));
+      }).toList();
     }
 
     final totalCount = membersWithStats.length;
@@ -145,7 +144,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = Provider.of<AppState>(context).l10n;
+    final appState = Provider.of<AppState>(context);
+    final l10n = appState.l10n;
 
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -188,6 +188,17 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${l10n.get(_getModeKey())} - ${_currentIndex + 1}/${_questions.length}'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              appState.currentProfile?.grayscalePhotos == true
+                  ? Icons.monochrome_photos
+                  : Icons.color_lens,
+            ),
+            tooltip: l10n.get('toggle_color_mode'),
+            onPressed: () => appState.toggleGrayscalePhotos(),
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

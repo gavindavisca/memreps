@@ -10,6 +10,7 @@ class Profiles extends Table {
   TextColumn get language => text().withDefault(const Constant('en'))();
   TextColumn get uuid => text().nullable()(); // Using nullable for migration safety
   BoolColumn get nextQuizIsRandom => boolean().withDefault(const Constant(false))();
+  BoolColumn get grayscalePhotos => boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastUsedAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -74,7 +75,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(impl.connect());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration {
@@ -104,6 +105,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 12) {
           await m.addColumn(profiles, profiles.nextQuizIsRandom);
+        }
+        if (from < 13) {
+          await m.addColumn(profiles, profiles.grayscalePhotos);
         }
 
         

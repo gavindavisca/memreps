@@ -24,6 +24,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   String? _selectedRegion;
   SortOption _sortOption = SortOption.lastName;
   bool _showFilters = false;
+  bool _duplicateLastNamesOnly = false;
 
   void _showSortMenu(BuildContext context, L10n l10n) async {
     final option = await showMenu<SortOption>(
@@ -98,6 +99,15 @@ class _BrowseScreenState extends State<BrowseScreen> {
         title: Text(appState.currentLegislature!.name),
         actions: [
           IconButton(
+            icon: Icon(
+              appState.currentProfile?.grayscalePhotos == true
+                  ? Icons.monochrome_photos
+                  : Icons.color_lens,
+            ),
+            tooltip: l10n.get('toggle_color_mode'),
+            onPressed: () => appState.toggleGrayscalePhotos(),
+          ),
+          IconButton(
             icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
             onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
@@ -152,6 +162,16 @@ class _BrowseScreenState extends State<BrowseScreen> {
                   }
                   
                   var items = snapshot.data ?? [];
+                  
+                  // Apply duplicate last name filter
+                  if (_duplicateLastNamesOnly) {
+                    final allItems = snapshot.data ?? [];
+                    items = items.where((i) {
+                      return allItems.any((other) =>
+                          other.member.id != i.member.id &&
+                          StringUtils.isDuplicateLastName(i.member.lastName, other.member.lastName));
+                    }).toList();
+                  }
                   
                   // Apply Filter
                   if (_selectedParty != null) {
@@ -277,6 +297,25 @@ class _BrowseScreenState extends State<BrowseScreen> {
                     selected: _selectedRegion == r,
                     onSelected: (sel) => setState(() => _selectedRegion = sel ? r : null),
                   )),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.get('last_name'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilterChip(
+                    label: Text(l10n.get('all')),
+                    selected: !_duplicateLastNamesOnly,
+                    onSelected: (_) => setState(() => _duplicateLastNamesOnly = false),
+                  ),
+                  FilterChip(
+                    label: Text(l10n.get('duplicate')),
+                    selected: _duplicateLastNamesOnly,
+                    onSelected: (_) => setState(() => _duplicateLastNamesOnly = true),
+                  ),
                 ],
               ),
             ],

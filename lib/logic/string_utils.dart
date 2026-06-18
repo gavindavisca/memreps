@@ -91,4 +91,29 @@ class StringUtils {
     
     return isFuzzyMatch(query, target);
   }
+
+  /// Checks if two last names are considered duplicate last names (either identical
+  /// after accent normalization, or matching a specific set of similar-sounding groups).
+  static bool isDuplicateLastName(String name1, String name2) {
+    final n1 = normalize(name1);
+    final n2 = normalize(name2);
+    
+    if (n1 == n2) return true;
+    
+    // Homophones / confusable last name groups in the legislatures
+    const phoneticGroups = [
+      {'lewis', 'louis'},
+      {'genereux', 'jeneroux'},
+      {'mackinnon', 'mckinnon'},
+      {'sarai', 'sari'},
+    ];
+    
+    for (final group in phoneticGroups) {
+      if (group.contains(n1) && group.contains(n2)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
 }

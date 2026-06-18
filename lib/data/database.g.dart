@@ -396,6 +396,21 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _grayscalePhotosMeta = const VerificationMeta(
+    'grayscalePhotos',
+  );
+  @override
+  late final GeneratedColumn<bool> grayscalePhotos = GeneratedColumn<bool>(
+    'grayscale_photos',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("grayscale_photos" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
     'lastUsedAt',
   );
@@ -427,6 +442,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     language,
     uuid,
     nextQuizIsRandom,
+    grayscalePhotos,
     lastUsedAt,
     createdAt,
   ];
@@ -483,6 +499,15 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         ),
       );
     }
+    if (data.containsKey('grayscale_photos')) {
+      context.handle(
+        _grayscalePhotosMeta,
+        grayscalePhotos.isAcceptableOrUnknown(
+          data['grayscale_photos']!,
+          _grayscalePhotosMeta,
+        ),
+      );
+    }
     if (data.containsKey('last_used_at')) {
       context.handle(
         _lastUsedAtMeta,
@@ -531,6 +556,10 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         DriftSqlType.bool,
         data['${effectivePrefix}next_quiz_is_random'],
       )!,
+      grayscalePhotos: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}grayscale_photos'],
+      )!,
       lastUsedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_used_at'],
@@ -555,6 +584,7 @@ class Profile extends DataClass implements Insertable<Profile> {
   final String language;
   final String? uuid;
   final bool nextQuizIsRandom;
+  final bool grayscalePhotos;
   final DateTime? lastUsedAt;
   final DateTime createdAt;
   const Profile({
@@ -564,6 +594,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     required this.language,
     this.uuid,
     required this.nextQuizIsRandom,
+    required this.grayscalePhotos,
     this.lastUsedAt,
     required this.createdAt,
   });
@@ -580,6 +611,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       map['uuid'] = Variable<String>(uuid);
     }
     map['next_quiz_is_random'] = Variable<bool>(nextQuizIsRandom);
+    map['grayscale_photos'] = Variable<bool>(grayscalePhotos);
     if (!nullToAbsent || lastUsedAt != null) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt);
     }
@@ -597,6 +629,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       language: Value(language),
       uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
       nextQuizIsRandom: Value(nextQuizIsRandom),
+      grayscalePhotos: Value(grayscalePhotos),
       lastUsedAt: lastUsedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastUsedAt),
@@ -616,6 +649,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       language: serializer.fromJson<String>(json['language']),
       uuid: serializer.fromJson<String?>(json['uuid']),
       nextQuizIsRandom: serializer.fromJson<bool>(json['nextQuizIsRandom']),
+      grayscalePhotos: serializer.fromJson<bool>(json['grayscalePhotos']),
       lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -630,6 +664,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       'language': serializer.toJson<String>(language),
       'uuid': serializer.toJson<String?>(uuid),
       'nextQuizIsRandom': serializer.toJson<bool>(nextQuizIsRandom),
+      'grayscalePhotos': serializer.toJson<bool>(grayscalePhotos),
       'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -642,6 +677,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     String? language,
     Value<String?> uuid = const Value.absent(),
     bool? nextQuizIsRandom,
+    bool? grayscalePhotos,
     Value<DateTime?> lastUsedAt = const Value.absent(),
     DateTime? createdAt,
   }) => Profile(
@@ -653,6 +689,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     language: language ?? this.language,
     uuid: uuid.present ? uuid.value : this.uuid,
     nextQuizIsRandom: nextQuizIsRandom ?? this.nextQuizIsRandom,
+    grayscalePhotos: grayscalePhotos ?? this.grayscalePhotos,
     lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -668,6 +705,9 @@ class Profile extends DataClass implements Insertable<Profile> {
       nextQuizIsRandom: data.nextQuizIsRandom.present
           ? data.nextQuizIsRandom.value
           : this.nextQuizIsRandom,
+      grayscalePhotos: data.grayscalePhotos.present
+          ? data.grayscalePhotos.value
+          : this.grayscalePhotos,
       lastUsedAt: data.lastUsedAt.present
           ? data.lastUsedAt.value
           : this.lastUsedAt,
@@ -684,6 +724,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           ..write('language: $language, ')
           ..write('uuid: $uuid, ')
           ..write('nextQuizIsRandom: $nextQuizIsRandom, ')
+          ..write('grayscalePhotos: $grayscalePhotos, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -698,6 +739,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     language,
     uuid,
     nextQuizIsRandom,
+    grayscalePhotos,
     lastUsedAt,
     createdAt,
   );
@@ -711,6 +753,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           other.language == this.language &&
           other.uuid == this.uuid &&
           other.nextQuizIsRandom == this.nextQuizIsRandom &&
+          other.grayscalePhotos == this.grayscalePhotos &&
           other.lastUsedAt == this.lastUsedAt &&
           other.createdAt == this.createdAt);
 }
@@ -722,6 +765,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<String> language;
   final Value<String?> uuid;
   final Value<bool> nextQuizIsRandom;
+  final Value<bool> grayscalePhotos;
   final Value<DateTime?> lastUsedAt;
   final Value<DateTime> createdAt;
   const ProfilesCompanion({
@@ -731,6 +775,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.language = const Value.absent(),
     this.uuid = const Value.absent(),
     this.nextQuizIsRandom = const Value.absent(),
+    this.grayscalePhotos = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -741,6 +786,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.language = const Value.absent(),
     this.uuid = const Value.absent(),
     this.nextQuizIsRandom = const Value.absent(),
+    this.grayscalePhotos = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : firstName = Value(firstName);
@@ -751,6 +797,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Expression<String>? language,
     Expression<String>? uuid,
     Expression<bool>? nextQuizIsRandom,
+    Expression<bool>? grayscalePhotos,
     Expression<DateTime>? lastUsedAt,
     Expression<DateTime>? createdAt,
   }) {
@@ -761,6 +808,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       if (language != null) 'language': language,
       if (uuid != null) 'uuid': uuid,
       if (nextQuizIsRandom != null) 'next_quiz_is_random': nextQuizIsRandom,
+      if (grayscalePhotos != null) 'grayscale_photos': grayscalePhotos,
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -773,6 +821,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Value<String>? language,
     Value<String?>? uuid,
     Value<bool>? nextQuizIsRandom,
+    Value<bool>? grayscalePhotos,
     Value<DateTime?>? lastUsedAt,
     Value<DateTime>? createdAt,
   }) {
@@ -783,6 +832,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       language: language ?? this.language,
       uuid: uuid ?? this.uuid,
       nextQuizIsRandom: nextQuizIsRandom ?? this.nextQuizIsRandom,
+      grayscalePhotos: grayscalePhotos ?? this.grayscalePhotos,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -809,6 +859,9 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (nextQuizIsRandom.present) {
       map['next_quiz_is_random'] = Variable<bool>(nextQuizIsRandom.value);
     }
+    if (grayscalePhotos.present) {
+      map['grayscale_photos'] = Variable<bool>(grayscalePhotos.value);
+    }
     if (lastUsedAt.present) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
     }
@@ -827,6 +880,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
           ..write('language: $language, ')
           ..write('uuid: $uuid, ')
           ..write('nextQuizIsRandom: $nextQuizIsRandom, ')
+          ..write('grayscalePhotos: $grayscalePhotos, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -3304,6 +3358,7 @@ typedef $$ProfilesTableCreateCompanionBuilder =
       Value<String> language,
       Value<String?> uuid,
       Value<bool> nextQuizIsRandom,
+      Value<bool> grayscalePhotos,
       Value<DateTime?> lastUsedAt,
       Value<DateTime> createdAt,
     });
@@ -3315,6 +3370,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder =
       Value<String> language,
       Value<String?> uuid,
       Value<bool> nextQuizIsRandom,
+      Value<bool> grayscalePhotos,
       Value<DateTime?> lastUsedAt,
       Value<DateTime> createdAt,
     });
@@ -3410,6 +3466,11 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<bool> get nextQuizIsRandom => $composableBuilder(
     column: $table.nextQuizIsRandom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get grayscalePhotos => $composableBuilder(
+    column: $table.grayscalePhotos,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3531,6 +3592,11 @@ class $$ProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get grayscalePhotos => $composableBuilder(
+    column: $table.grayscalePhotos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3588,6 +3654,11 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<bool> get nextQuizIsRandom => $composableBuilder(
     column: $table.nextQuizIsRandom,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get grayscalePhotos => $composableBuilder(
+    column: $table.grayscalePhotos,
     builder: (column) => column,
   );
 
@@ -3711,6 +3782,7 @@ class $$ProfilesTableTableManager
                 Value<String> language = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<bool> nextQuizIsRandom = const Value.absent(),
+                Value<bool> grayscalePhotos = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ProfilesCompanion(
@@ -3720,6 +3792,7 @@ class $$ProfilesTableTableManager
                 language: language,
                 uuid: uuid,
                 nextQuizIsRandom: nextQuizIsRandom,
+                grayscalePhotos: grayscalePhotos,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
               ),
@@ -3731,6 +3804,7 @@ class $$ProfilesTableTableManager
                 Value<String> language = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<bool> nextQuizIsRandom = const Value.absent(),
+                Value<bool> grayscalePhotos = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ProfilesCompanion.insert(
@@ -3740,6 +3814,7 @@ class $$ProfilesTableTableManager
                 language: language,
                 uuid: uuid,
                 nextQuizIsRandom: nextQuizIsRandom,
+                grayscalePhotos: grayscalePhotos,
                 lastUsedAt: lastUsedAt,
                 createdAt: createdAt,
               ),

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
+import '../../logic/app_state.dart';
 
 class MemberImage extends StatelessWidget {
   final String imageUrl;
@@ -20,6 +22,9 @@ class MemberImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final isGrayscale = appState.currentProfile?.grayscalePhotos ?? false;
+
     String finalUrl = imageUrl;
     
     if (kIsWeb && imageUrl.isNotEmpty) {
@@ -32,7 +37,7 @@ class MemberImage extends StatelessWidget {
       }
     }
 
-    return CachedNetworkImage(
+    Widget imageWidget = CachedNetworkImage(
       imageUrl: finalUrl,
       width: width,
       height: height,
@@ -53,5 +58,19 @@ class MemberImage extends StatelessWidget {
         child: const Icon(Icons.person, size: 40, color: Colors.grey),
       ),
     );
+
+    if (isGrayscale) {
+      imageWidget = ColorFiltered(
+        colorFilter: const ColorFilter.matrix(<double>[
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0,      0,      0,      1, 0,
+        ]),
+        child: imageWidget,
+      );
+    }
+
+    return imageWidget;
   }
 }

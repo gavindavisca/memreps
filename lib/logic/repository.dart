@@ -2,6 +2,7 @@ import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:uuid/uuid.dart';
 import '../data/database.dart';
 import 'package:drift/drift.dart';
+import 'string_utils.dart';
 
 class MemberWithStats {
   final Member member;
@@ -80,6 +81,12 @@ class Repository {
     return (db.select(db.profiles)..where((tbl) => tbl.id.equals(profileId))).getSingle();
   }
 
+  Future<Profile> toggleGrayscalePhotos(int profileId, bool currentVal) async {
+    await (db.update(db.profiles)..where((tbl) => tbl.id.equals(profileId)))
+        .write(ProfilesCompanion(grayscalePhotos: Value(!currentVal)));
+    return (db.select(db.profiles)..where((tbl) => tbl.id.equals(profileId))).getSingle();
+  }
+
   // Legislature Management
   Future<List<Legislature>> getLegislatures() => db.select(db.legislatures).get();
   
@@ -132,20 +139,22 @@ class Repository {
       }
       await (db.delete(db.members)..where((tbl) => tbl.legislatureId.equals(leg!.id))).go();
 
-      // Check for duplicate names to set requiresRidingDistinction
-      final lastNames = members.map((m) => _normalizeName(m.lastName.value)).toList();
-      final duplicateLastNames = <String>{};
-      final seen = <String>{};
-      for (var name in lastNames) {
-        if (!seen.add(name)) {
-          duplicateLastNames.add(name);
+      // Check for duplicate names using fuzzy matching (sounds/spelled similar)
+      final size = members.length;
+      final duplicateIndices = <int>{};
+      for (int i = 0; i < size; i++) {
+        for (int j = i + 1; j < size; j++) {
+          if (StringUtils.isDuplicateLastName(members[i].lastName.value, members[j].lastName.value)) {
+            duplicateIndices.add(i);
+            duplicateIndices.add(j);
+          }
         }
       }
 
       // 2. Insert all new members
-      for (var memberData in members) {
-        final normalizedLastName = _normalizeName(memberData.lastName.value);
-        final requiresDistinction = duplicateLastNames.contains(normalizedLastName);
+      for (int i = 0; i < size; i++) {
+        final memberData = members[i];
+        final requiresDistinction = duplicateIndices.contains(i);
         
         final comp = memberData.copyWith(
           legislatureId: Value(leg.id),
@@ -157,11 +166,7 @@ class Repository {
     });
   }
 
-  String _normalizeName(String name) {
-    // Simple normalization: lowercase and trim. 
-    // Further normalization (removing accents) could be added if needed.
-    return name.toLowerCase().trim();
-  }
+
 
   // Fetch Members for Browse or Quizzes
   Future<List<MemberWithStats>> getMembersWithStats(int userId, int legislatureId, {String? party, String? region}) async {

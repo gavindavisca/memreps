@@ -1,4 +1,5 @@
 import '../data/database.dart';
+import 'string_utils.dart';
 
 enum QuizMode {
   nameMatch,
@@ -121,10 +122,9 @@ class QuizService {
     // If there's another member with the same last name (case-insensitive),
     // we must also ask for the riding.
     
-    final normalizedLastName = member.lastName.toLowerCase().trim();
     final collisions = allMembers.where((m) => 
       m.id != member.id && 
-      m.lastName.toLowerCase().trim() == normalizedLastName
+      StringUtils.isDuplicateLastName(member.lastName, m.lastName)
     ).toList();
 
     List<String>? ridingOptions;

@@ -95,4 +95,15 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> toggleGrayscalePhotos() async {
+    if (_currentProfile != null) {
+      final updatedProfile = await repository.toggleGrayscalePhotos(
+        _currentProfile!.id,
+        _currentProfile!.grayscalePhotos,
+      );
+      _currentProfile = updatedProfile;
+      notifyListeners();
+    }
+  }
 }
