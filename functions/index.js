@@ -179,12 +179,20 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
         if (ts < oneWeekAgo) return;
       }
 
-      const uuid = data.userUuid;
-      if (!userStats[uuid]) {
-        userStats[uuid] = { name: data.userName, totalScore: 0, count: 0 };
+      const rawName = (data.userName || "").trim();
+      const nameKey = rawName ? rawName.toLowerCase() : (data.userUuid || "anonymous");
+      const displayName = rawName || "Anonymous";
+
+      if (!userStats[nameKey]) {
+        userStats[nameKey] = { name: displayName, totalScore: 0, count: 0 };
+      } else {
+        // If existing name is lowercase and new entry has proper casing, update display name
+        if (userStats[nameKey].name === userStats[nameKey].name.toLowerCase() && displayName !== displayName.toLowerCase()) {
+          userStats[nameKey].name = displayName;
+        }
       }
-      userStats[uuid].totalScore += data.scorePercentage;
-      userStats[uuid].count += 1;
+      userStats[nameKey].totalScore += data.scorePercentage;
+      userStats[nameKey].count += 1;
     });
 
     const leaderboard = Object.values(userStats)

@@ -7,6 +7,7 @@ enum QuizMode {
   ridingMatch,
   nameRecall,
   faceMatch,
+  finalTest,
 }
 
 class QuizQuestion {
@@ -17,6 +18,7 @@ class QuizQuestion {
   final List<String>? ridingOptions; // For Active Recall Names riding distinction
   final String? correctAnswer;
   final Member? correctMember;
+  final bool isDuplicate;
 
   QuizQuestion({
     required this.member,
@@ -26,6 +28,7 @@ class QuizQuestion {
     this.ridingOptions,
     this.correctAnswer,
     this.correctMember,
+    this.isDuplicate = false,
   });
 }
 
@@ -48,6 +51,8 @@ class QuizService {
           return _generateActiveRecall(member, allLegislatureMembers);
         case QuizMode.faceMatch:
           return _generateReverseRecall(member, allLegislatureMembers);
+        case QuizMode.finalTest:
+          return _generateFinalTest(member, allLegislatureMembers);
       }
     }).toList();
   }
@@ -177,6 +182,19 @@ class QuizService {
       partyOptions: partyOptions,
       correctMember: member,
       correctAnswer: member.party,
+    );
+  }
+
+  QuizQuestion _generateFinalTest(Member member, List<Member> allMembers) {
+    final hasDuplicate = allMembers.any((m) =>
+      m.id != member.id &&
+      StringUtils.isDuplicateLastName(member.lastName, m.lastName)
+    );
+
+    return QuizQuestion(
+      member: member,
+      isDuplicate: hasDuplicate,
+      correctAnswer: member.lastName,
     );
   }
 }

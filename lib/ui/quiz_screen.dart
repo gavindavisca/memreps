@@ -42,12 +42,23 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _isCorrect = false;
   String? _selectedRiding;
   final TextEditingController _textController = TextEditingController();
+  final TextEditingController _partyController = TextEditingController();
+  final TextEditingController _ridingController = TextEditingController();
+  bool _hasDuplicateToggle = false;
   int _correctCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadQuestions();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _partyController.dispose();
+    _ridingController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadQuestions() async {
@@ -286,6 +297,7 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuizMode.ridingMatch: return 'riding_match';
       case QuizMode.nameRecall: return 'name_recall';
       case QuizMode.faceMatch: return 'face_match';
+      case QuizMode.finalTest: return 'final_test';
     }
   }
 
@@ -507,7 +519,124 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
       ),
     );
+
+      case QuizMode.finalTest:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _textController,
+              enabled: !_isAnswered,
+              decoration: InputDecoration(
+                labelText: l10n.get('last_name'),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onSubmitted: !_isAnswered ? (_) => _handleAnswer('') : null,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _partyController,
+              enabled: !_isAnswered,
+              decoration: InputDecoration(
+                labelText: l10n.get('party'),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onSubmitted: !_isAnswered ? (_) => _handleAnswer('') : null,
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: Text(
+                l10n.get('has_duplicate_last_name'),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+              value: _hasDuplicateToggle,
+              onChanged: !_isAnswered
+                  ? (val) => setState(() => _hasDuplicateToggle = val)
+                  : null,
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (_hasDuplicateToggle) ...[
+              const SizedBox(height: 4),
+              TextField(
+                controller: _ridingController,
+                enabled: !_isAnswered,
+                decoration: InputDecoration(
+                  labelText: l10n.get('riding'),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                onSubmitted: !_isAnswered ? (_) => _handleAnswer('') : null,
+              ),
+            ],
+            if (!_isAnswered) ...[
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => _handleAnswer(''),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: Text(l10n.get('submit_answer')),
+              ),
+            ],
+            if (_isAnswered) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: (_isCorrect ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _isCorrect ? Colors.green : Colors.red,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isCorrect ? l10n.get('correct') : l10n.get('incorrect'),
+                      style: TextStyle(
+                        color: _isCorrect ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${l10n.get('name')}: ${question.member.firstName} ${question.member.lastName}',
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    Text(
+                      '${l10n.get('party')}: ${question.member.party ?? 'Independent'}',
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    Text(
+                      '${l10n.get('has_duplicate_last_name')}: ${question.isDuplicate ? "Yes" : "No"}',
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    if (question.isDuplicate)
+                      Text(
+                        '${l10n.get('riding')}: ${question.member.riding ?? 'Unknown'}',
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
     }
+  }
+
+  bool _isAnswerMatch(String input, String target) {
+    final normInput = StringUtils.normalize(input);
+    final normTarget = StringUtils.normalize(target);
+    if (normInput.isEmpty || normTarget.isEmpty) return false;
+
+    if (normInput == normTarget) return true;
+    if (normTarget.contains(normInput) && normInput.length >= 3) return true;
+    if (normInput.contains(normTarget) && normTarget.length >= 3) return true;
+    return StringUtils.isFuzzyMatch(input, target);
   }
 
   void _handleAnswer(String answer) {
@@ -527,6 +656,21 @@ class _QuizScreenState extends State<QuizScreen> {
       correct = nameCorrect && ridingCorrect;
     } else if (widget.mode == QuizMode.faceMatch) {
       correct = answer == question.member.id.toString();
+    } else if (widget.mode == QuizMode.finalTest) {
+      final typedLastName = _textController.text.trim();
+      final typedParty = _partyController.text.trim();
+      final typedRiding = _ridingController.text.trim();
+
+      final actualLastName = question.member.lastName;
+      final actualParty = question.member.party ?? '';
+      final actualRiding = question.member.riding ?? '';
+
+      final lastNameCorrect = _isAnswerMatch(typedLastName, actualLastName);
+      final partyCorrect = _isAnswerMatch(typedParty, actualParty);
+      final duplicateCorrect = _hasDuplicateToggle == question.isDuplicate;
+      final ridingCorrect = !question.isDuplicate || _isAnswerMatch(typedRiding, actualRiding);
+
+      correct = lastNameCorrect && partyCorrect && duplicateCorrect && ridingCorrect;
     }
 
     setState(() {
@@ -607,6 +751,9 @@ class _QuizScreenState extends State<QuizScreen> {
             _selectedAnswer = null;
             _selectedRiding = null;
             _textController.clear();
+            _partyController.clear();
+            _ridingController.clear();
+            _hasDuplicateToggle = false;
           });
         } else {
           _saveQuizResult();

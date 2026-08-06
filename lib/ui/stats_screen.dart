@@ -76,6 +76,7 @@ class _StatsScreenState extends State<StatsScreen> {
             'riding_match',
             'face_match',
             'name_recall',
+            'final_test',
           ];
 
           // Only show modes that have data

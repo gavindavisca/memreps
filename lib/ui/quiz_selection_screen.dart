@@ -114,7 +114,15 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          const Spacer(),
+                          Expanded(
+                            child: _buildModeCard(
+                              context,
+                              l10n.get('final_test'),
+                              l10n.get('final_test_desc'),
+                              Icons.workspace_premium_rounded,
+                              QuizMode.finalTest,
+                            ),
+                          ),
                         ],
                       ),
                     ] else ...[
@@ -156,6 +164,14 @@ class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
                         l10n.get('name_recall_desc'),
                         Icons.keyboard_rounded,
                         QuizMode.nameRecall,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildModeCard(
+                        context,
+                        l10n.get('final_test'),
+                        l10n.get('final_test_desc'),
+                        Icons.workspace_premium_rounded,
+                        QuizMode.finalTest,
                       ),
                     ],
                   ],
