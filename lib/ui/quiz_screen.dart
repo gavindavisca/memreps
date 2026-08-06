@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../logic/app_state.dart';
 import '../logic/repository.dart';
@@ -44,6 +45,11 @@ class _QuizScreenState extends State<QuizScreen> {
   final TextEditingController _textController = TextEditingController();
   final TextEditingController _partyController = TextEditingController();
   final TextEditingController _ridingController = TextEditingController();
+  final FocusNode _lastNameFocusNode = FocusNode();
+  final FocusNode _partyFocusNode = FocusNode();
+  final FocusNode _toggleFocusNode = FocusNode();
+  final FocusNode _ridingFocusNode = FocusNode();
+  final FocusNode _keyboardFocusNode = FocusNode();
   bool _hasDuplicateToggle = false;
   int _correctCount = 0;
 
@@ -58,6 +64,11 @@ class _QuizScreenState extends State<QuizScreen> {
     _textController.dispose();
     _partyController.dispose();
     _ridingController.dispose();
+    _lastNameFocusNode.dispose();
+    _partyFocusNode.dispose();
+    _toggleFocusNode.dispose();
+    _ridingFocusNode.dispose();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -145,6 +156,11 @@ class _QuizScreenState extends State<QuizScreen> {
         _questions = questions;
         _isLoading = false;
       });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.mode == QuizMode.finalTest || widget.mode == QuizMode.nameRecall) {
+          _lastNameFocusNode.requestFocus();
+        }
+      });
     } catch (e) {
       debugPrint('Error generating questions: $e');
       setState(() {
@@ -196,96 +212,108 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final question = _questions[_currentIndex];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${l10n.get(_getModeKey())} - ${_currentIndex + 1}/${_questions.length}'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              appState.currentProfile?.grayscalePhotos == true
-                  ? Icons.monochrome_photos
-                  : Icons.color_lens,
+    return KeyboardListener(
+      focusNode: _keyboardFocusNode,
+      autofocus: true,
+      onKeyEvent: (event) {
+        if (_isAnswered &&
+            event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.numpadEnter)) {
+          _advanceToNextQuestion();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('${l10n.get(_getModeKey())} - ${_currentIndex + 1}/${_questions.length}'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                appState.currentProfile?.grayscalePhotos == true
+                    ? Icons.monochrome_photos
+                    : Icons.color_lens,
+              ),
+              tooltip: l10n.get('toggle_color_mode'),
+              onPressed: () => appState.toggleGrayscalePhotos(),
             ),
-            tooltip: l10n.get('toggle_color_mode'),
-            onPressed: () => appState.toggleGrayscalePhotos(),
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 800;
+          ],
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 800;
 
-          if (isWide) {
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: _buildQuestionCard(question, l10n, isWide: true),
-                      ),
-                      const SizedBox(width: 48),
-                      Expanded(
-                        flex: 1,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildInputArea(question, l10n),
-                              if (_isAnswered) ...[
-                                const SizedBox(height: 24),
-                                if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
-                                  Text(
-                                    '${question.member.firstName} ${question.member.lastName}',
-                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 12),
+            if (isWide) {
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: _buildQuestionCard(question, l10n, isWide: true),
+                        ),
+                        const SizedBox(width: 48),
+                        Expanded(
+                          flex: 1,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildInputArea(question, l10n),
+                                if (_isAnswered) ...[
+                                  const SizedBox(height: 24),
+                                  if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
+                                    Text(
+                                      '${question.member.firstName} ${question.member.lastName}',
+                                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
+                                  _buildNextButton(l10n, isWide: true),
                                 ],
-                                _buildNextButton(l10n, isWide: true),
                               ],
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: Column(
+                    children: [
+                      _buildQuestionCard(question, l10n, isWide: false),
+                      const SizedBox(height: 16),
+                      _buildInputArea(question, l10n),
+                      if (_isAnswered) ...[
+                        const SizedBox(height: 16),
+                        if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
+                          Text(
+                            '${question.member.firstName} ${question.member.lastName}',
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        _buildNextButton(l10n, isWide: false),
+                      ],
                     ],
                   ),
                 ),
               ),
             );
-          }
-
-          return Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                child: Column(
-                  children: [
-                    _buildQuestionCard(question, l10n, isWide: false),
-                    const SizedBox(height: 16),
-                    _buildInputArea(question, l10n),
-                    if (_isAnswered) ...[
-                      const SizedBox(height: 16),
-                      if (widget.mode == QuizMode.partyMatch || widget.mode == QuizMode.ridingMatch) ...[
-                        Text(
-                          '${question.member.firstName} ${question.member.lastName}',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      _buildNextButton(l10n, isWide: false),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -411,6 +439,8 @@ class _QuizScreenState extends State<QuizScreen> {
           children: [
             TextField(
               controller: _textController,
+              focusNode: _lastNameFocusNode,
+              autofocus: true,
               enabled: !_isAnswered,
               decoration: InputDecoration(
                 hintText: l10n.get('last_name'),
@@ -526,45 +556,115 @@ class _QuizScreenState extends State<QuizScreen> {
           children: [
             TextField(
               controller: _textController,
+              focusNode: _lastNameFocusNode,
+              autofocus: true,
               enabled: !_isAnswered,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: l10n.get('last_name'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              onSubmitted: !_isAnswered ? (_) => _handleAnswer('') : null,
+              onSubmitted: (_) {
+                if (_isAnswered) {
+                  _advanceToNextQuestion();
+                } else {
+                  _partyFocusNode.requestFocus();
+                }
+              },
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _partyController,
+              focusNode: _partyFocusNode,
               enabled: !_isAnswered,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: l10n.get('party'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              onSubmitted: !_isAnswered ? (_) => _handleAnswer('') : null,
+              onSubmitted: (_) {
+                if (_isAnswered) {
+                  _advanceToNextQuestion();
+                } else if (_hasDuplicateToggle) {
+                  _ridingFocusNode.requestFocus();
+                } else {
+                  _toggleFocusNode.requestFocus();
+                }
+              },
             ),
             const SizedBox(height: 8),
-            SwitchListTile(
-              title: Text(
-                l10n.get('has_duplicate_last_name'),
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            Focus(
+              focusNode: _toggleFocusNode,
+              onKeyEvent: (node, event) {
+                if (!_isAnswered &&
+                    event is KeyDownEvent &&
+                    (event.logicalKey == LogicalKeyboardKey.enter ||
+                     event.logicalKey == LogicalKeyboardKey.numpadEnter ||
+                     event.logicalKey == LogicalKeyboardKey.space)) {
+                  setState(() {
+                    _hasDuplicateToggle = !_hasDuplicateToggle;
+                  });
+                  if (_hasDuplicateToggle) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _ridingFocusNode.requestFocus();
+                    });
+                  }
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: Builder(
+                builder: (context) {
+                  final isFocused = Focus.of(context).hasFocus;
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: isFocused
+                          ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+                          : Border.all(color: Colors.transparent, width: 2),
+                    ),
+                    child: ExcludeFocus(
+                      child: SwitchListTile(
+                        title: Text(
+                          l10n.get('has_duplicate_last_name'),
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        value: _hasDuplicateToggle,
+                        onChanged: !_isAnswered
+                            ? (val) {
+                                setState(() => _hasDuplicateToggle = val);
+                                if (val) {
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    _ridingFocusNode.requestFocus();
+                                  });
+                                }
+                              }
+                            : null,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  );
+                },
               ),
-              value: _hasDuplicateToggle,
-              onChanged: !_isAnswered
-                  ? (val) => setState(() => _hasDuplicateToggle = val)
-                  : null,
-              contentPadding: EdgeInsets.zero,
             ),
             if (_hasDuplicateToggle) ...[
               const SizedBox(height: 4),
               TextField(
                 controller: _ridingController,
+                focusNode: _ridingFocusNode,
                 enabled: !_isAnswered,
+                textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
                   labelText: l10n.get('riding'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                onSubmitted: !_isAnswered ? (_) => _handleAnswer('') : null,
+                onSubmitted: (_) {
+                  if (_isAnswered) {
+                    _advanceToNextQuestion();
+                  } else {
+                    _handleAnswer('');
+                  }
+                },
               ),
             ],
             if (!_isAnswered) ...[
@@ -680,6 +780,10 @@ class _QuizScreenState extends State<QuizScreen> {
       if (correct) _correctCount++;
     });
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _keyboardFocusNode.requestFocus();
+    });
+
     _submitSrsReview(correct);
   }
 
@@ -740,28 +844,35 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
+  void _advanceToNextQuestion() {
+    FocusScope.of(context).unfocus();
+    if (_currentIndex < _questions.length - 1) {
+      setState(() {
+        _currentIndex++;
+        _isAnswered = false;
+        _selectedAnswer = null;
+        _selectedRiding = null;
+        _textController.clear();
+        _partyController.clear();
+        _ridingController.clear();
+        _hasDuplicateToggle = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.mode == QuizMode.finalTest || widget.mode == QuizMode.nameRecall) {
+          _lastNameFocusNode.requestFocus();
+        }
+      });
+    } else {
+      _saveQuizResult();
+      setState(() {
+        _currentIndex++;
+      });
+    }
+  }
+
   Widget _buildNextButton(L10n l10n, {required bool isWide}) {
     final button = ElevatedButton(
-      onPressed: () {
-        FocusScope.of(context).unfocus();
-        if (_currentIndex < _questions.length - 1) {
-          setState(() {
-            _currentIndex++;
-            _isAnswered = false;
-            _selectedAnswer = null;
-            _selectedRiding = null;
-            _textController.clear();
-            _partyController.clear();
-            _ridingController.clear();
-            _hasDuplicateToggle = false;
-          });
-        } else {
-          _saveQuizResult();
-          setState(() {
-            _currentIndex++;
-          });
-        }
-      },
+      onPressed: _advanceToNextQuestion,
       style: ElevatedButton.styleFrom(
         minimumSize: Size.fromHeight(isWide ? 64 : 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
