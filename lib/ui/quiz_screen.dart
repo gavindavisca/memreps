@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -130,17 +131,32 @@ class _QuizScreenState extends State<QuizScreen> {
       debugPrint('Quiz Selection Method: Random');
     } else {
       // Priority: FSRS (Due -> New -> Learned)
-      // Priority 1: Due reviews
-      quizSubset.addAll(due.take(10).map((ms) => ms.member));
+      // Priority 1: Due reviews (shuffled candidate pool for variety)
+      final dueMembers = due.map((ms) => ms.member).toList();
+      if (dueMembers.length > 10) {
+        dueMembers.sublist(0, math.min(25, dueMembers.length)).shuffle();
+      }
+      quizSubset.addAll(dueMembers.take(10));
       
       // Priority 2: New members
       if (quizSubset.length < 10) {
-        quizSubset.addAll(isNew.take(10 - quizSubset.length).map((ms) => ms.member));
+        final remainingNeeded = 10 - quizSubset.length;
+        quizSubset.addAll(isNew.take(remainingNeeded).map((ms) => ms.member));
       }
       
-      // Priority 3: Learned members (reviewing ahead)
+      // Priority 3: Learned members (reviewing ahead with pool variety across the filter)
       if (quizSubset.length < 10) {
-        quizSubset.addAll(learned.take(10 - quizSubset.length).map((ms) => ms.member));
+        final remainingNeeded = 10 - quizSubset.length;
+        final existingIds = quizSubset.map((m) => m.id).toSet();
+        
+        final candidatePool = learned
+            .where((ms) => !existingIds.contains(ms.member.id))
+            .take(math.min(30, learned.length))
+            .map((ms) => ms.member)
+            .toList()
+          ..shuffle();
+          
+        quizSubset.addAll(candidatePool.take(remainingNeeded));
       }
       debugPrint('Quiz Selection Method: FSRS');
     }
@@ -728,12 +744,20 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
+  bool _isWordSetMatch(String input, String target) {
+    final words1 = StringUtils.normalize(input).split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toSet();
+    final words2 = StringUtils.normalize(target).split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toSet();
+    if (words1.isEmpty || words2.isEmpty) return false;
+    return words1.length == words2.length && words1.containsAll(words2);
+  }
+
   bool _isAnswerMatch(String input, String target) {
     final normInput = StringUtils.normalize(input);
     final normTarget = StringUtils.normalize(target);
     if (normInput.isEmpty || normTarget.isEmpty) return false;
 
     if (normInput == normTarget) return true;
+    if (_isWordSetMatch(input, target)) return true;
     if (normTarget.contains(normInput) && normInput.length >= 3) return true;
     if (normInput.contains(normTarget) && normTarget.length >= 3) return true;
     return StringUtils.isFuzzyMatch(input, target);
@@ -746,10 +770,13 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (normInput.isEmpty) return false;
 
-    final hasFirst = normInput.contains(normFirst) || StringUtils.isFuzzyMatch(input, firstName);
-    final hasLast = normInput.contains(normLast) || StringUtils.isFuzzyMatch(input, lastName);
+    final inputWords = normInput.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
 
-    return (hasFirst && hasLast) || StringUtils.isFuzzyMatch(input, '$firstName $lastName');
+    final hasFirst = inputWords.any((w) => w == normFirst || StringUtils.isFuzzyMatch(w, normFirst));
+    final hasLast = inputWords.any((w) => w == normLast || StringUtils.isFuzzyMatch(w, normLast));
+
+    if (hasFirst && hasLast) return true;
+    return StringUtils.isFuzzyMatch(normInput, '$normFirst $normLast');
   }
 
   void _handleAnswer(String answer) {
@@ -779,12 +806,16 @@ class _QuizScreenState extends State<QuizScreen> {
       final actualParty = question.member.party ?? '';
       final actualRiding = question.member.riding ?? '';
 
-      final nameCorrect = _hasDuplicateToggle
+      final isDuplicateMember = question.isDuplicate;
+      final requireFullName = isDuplicateMember || _hasDuplicateToggle;
+
+      final nameCorrect = requireFullName
           ? _isFullNameMatch(typedName, actualFirstName, actualLastName)
-          : _isAnswerMatch(typedName, actualLastName);
+          : (_isAnswerMatch(typedName, actualLastName) || _isFullNameMatch(typedName, actualFirstName, actualLastName));
+
       final partyCorrect = _isAnswerMatch(typedParty, actualParty);
-      final duplicateCorrect = _hasDuplicateToggle == question.isDuplicate;
-      final ridingCorrect = !question.isDuplicate || _isAnswerMatch(typedRiding, actualRiding);
+      final duplicateCorrect = _hasDuplicateToggle == isDuplicateMember;
+      final ridingCorrect = !isDuplicateMember || _isAnswerMatch(typedRiding, actualRiding);
 
       correct = nameCorrect && partyCorrect && duplicateCorrect && ridingCorrect;
     }
