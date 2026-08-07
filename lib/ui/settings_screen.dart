@@ -180,7 +180,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'v1.0.3',
+              'v1.1.0',
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
