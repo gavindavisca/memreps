@@ -561,7 +561,7 @@ class _QuizScreenState extends State<QuizScreen> {
               enabled: !_isAnswered,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                labelText: l10n.get('last_name'),
+                labelText: l10n.get(_hasDuplicateToggle ? 'full_name' : 'last_name'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onSubmitted: (_) {
@@ -739,6 +739,19 @@ class _QuizScreenState extends State<QuizScreen> {
     return StringUtils.isFuzzyMatch(input, target);
   }
 
+  bool _isFullNameMatch(String input, String firstName, String lastName) {
+    final normInput = StringUtils.normalize(input);
+    final normFirst = StringUtils.normalize(firstName);
+    final normLast = StringUtils.normalize(lastName);
+
+    if (normInput.isEmpty) return false;
+
+    final hasFirst = normInput.contains(normFirst) || StringUtils.isFuzzyMatch(input, firstName);
+    final hasLast = normInput.contains(normLast) || StringUtils.isFuzzyMatch(input, lastName);
+
+    return (hasFirst && hasLast) || StringUtils.isFuzzyMatch(input, '$firstName $lastName');
+  }
+
   void _handleAnswer(String answer) {
     final question = _questions[_currentIndex];
     bool correct = false;
@@ -757,20 +770,23 @@ class _QuizScreenState extends State<QuizScreen> {
     } else if (widget.mode == QuizMode.faceMatch) {
       correct = answer == question.member.id.toString();
     } else if (widget.mode == QuizMode.finalTest) {
-      final typedLastName = _textController.text.trim();
+      final typedName = _textController.text.trim();
       final typedParty = _partyController.text.trim();
       final typedRiding = _ridingController.text.trim();
 
+      final actualFirstName = question.member.firstName;
       final actualLastName = question.member.lastName;
       final actualParty = question.member.party ?? '';
       final actualRiding = question.member.riding ?? '';
 
-      final lastNameCorrect = _isAnswerMatch(typedLastName, actualLastName);
+      final nameCorrect = _hasDuplicateToggle
+          ? _isFullNameMatch(typedName, actualFirstName, actualLastName)
+          : _isAnswerMatch(typedName, actualLastName);
       final partyCorrect = _isAnswerMatch(typedParty, actualParty);
       final duplicateCorrect = _hasDuplicateToggle == question.isDuplicate;
       final ridingCorrect = !question.isDuplicate || _isAnswerMatch(typedRiding, actualRiding);
 
-      correct = lastNameCorrect && partyCorrect && duplicateCorrect && ridingCorrect;
+      correct = nameCorrect && partyCorrect && duplicateCorrect && ridingCorrect;
     }
 
     setState(() {
