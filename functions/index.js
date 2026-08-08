@@ -145,13 +145,13 @@ exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
 
   try {
     await db.collection("quiz_results").add({
-      userUuid,
-      userName,
-      legislatureId,
-      legislatureName,
-      quizModeId,
-      filterPercentage,
-      scorePercentage,
+      userUuid: userUuid || "",
+      userName: userName || "Anonymous",
+      legislatureId: legislatureId || 1,
+      legislatureName: legislatureName || "",
+      quizModeId: quizModeId || "final_test",
+      filterPercentage: typeof filterPercentage === "number" ? filterPercentage : 1.0,
+      scorePercentage: typeof scorePercentage === "number" ? scorePercentage : 0.0,
       timestamp: FieldValue.serverTimestamp(),
     });
 
