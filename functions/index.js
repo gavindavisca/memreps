@@ -70,8 +70,28 @@ async function verifyRecaptchaToken(token) {
   }
 }
 
+function parseRequestBody(req) {
+  if (!req.body) return {};
+  if (typeof req.body === "string") {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      return {};
+    }
+  }
+  if (Buffer.isBuffer(req.body)) {
+    try {
+      return JSON.parse(req.body.toString("utf8"));
+    } catch (e) {
+      return {};
+    }
+  }
+  return req.body;
+}
+
 exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
-  const { uuid, firstName, language, legislatureId, legislatureName, recaptchaToken } = req.body;
+  const body = parseRequestBody(req);
+  const { uuid, firstName, language, legislatureId, legislatureName, recaptchaToken } = body;
   
   if (!uuid || !firstName) {
     res.status(400).send("Missing required fields");
@@ -115,7 +135,8 @@ exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
 });
 
 exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
-  const { userUuid, userName, legislatureId, legislatureName, quizModeId, filterPercentage, scorePercentage } = req.body;
+  const body = parseRequestBody(req);
+  const { userUuid, userName, legislatureId, legislatureName, quizModeId, filterPercentage, scorePercentage } = body;
   
   if (!userUuid || scorePercentage === undefined) {
     res.status(400).send("Missing required fields");
@@ -142,7 +163,8 @@ exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
 });
 
 exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
-  const { legislatureId, quizModeId } = req.body;
+  const body = parseRequestBody(req);
+  const { legislatureId, quizModeId } = body;
   
   if (!legislatureId || !quizModeId) {
     res.status(400).send("Missing required filters");
