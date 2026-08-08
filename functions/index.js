@@ -13,13 +13,17 @@ if (process.env.FUNCTIONS_EMULATOR && process.env.FIRESTORE_EMULATOR_HOST) {
 }
 
 const db = getFirestore("memreps");
-const recaptchaClient = new RecaptchaEnterpriseServiceClient();
+let recaptchaClient;
 
 async function verifyRecaptchaToken(token) {
   // If running in the Firebase Functions emulator, bypass reCAPTCHA verification.
   if (process.env.FUNCTIONS_EMULATOR) {
     console.log("Functions emulator detected. Bypassing reCAPTCHA verification.");
     return { valid: true, score: 1.0 };
+  }
+
+  if (!recaptchaClient) {
+    recaptchaClient = new RecaptchaEnterpriseServiceClient();
   }
 
   const projectId = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;

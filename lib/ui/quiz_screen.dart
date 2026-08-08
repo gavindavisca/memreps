@@ -459,7 +459,7 @@ class _QuizScreenState extends State<QuizScreen> {
               autofocus: true,
               enabled: !_isAnswered,
               decoration: InputDecoration(
-                hintText: l10n.get('last_name'),
+                hintText: l10n.get(question.ridingOptions != null ? 'full_name' : 'last_name'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onSubmitted: (value) => _handleAnswer(value),
@@ -509,7 +509,7 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '${l10n.get('answer')}${question.correctAnswer}${question.ridingOptions != null ? ' (${question.member.riding})' : ''}',
+                '${l10n.get('answer')}${question.member.firstName} ${question.member.lastName}${question.ridingOptions != null ? ' (${question.member.riding})' : ''}',
                 style: const TextStyle(fontSize: 18),
               ),
             ],
@@ -744,39 +744,42 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  bool _isWordSetMatch(String input, String target) {
-    final words1 = StringUtils.normalize(input).split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toSet();
-    final words2 = StringUtils.normalize(target).split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toSet();
-    if (words1.isEmpty || words2.isEmpty) return false;
-    return words1.length == words2.length && words1.containsAll(words2);
-  }
-
-  bool _isAnswerMatch(String input, String target) {
+  bool _isExactAnswerMatch(String input, String target) {
     final normInput = StringUtils.normalize(input);
     final normTarget = StringUtils.normalize(target);
     if (normInput.isEmpty || normTarget.isEmpty) return false;
-
-    if (normInput == normTarget) return true;
-    if (_isWordSetMatch(input, target)) return true;
-    if (normTarget.contains(normInput) && normInput.length >= 3) return true;
-    if (normInput.contains(normTarget) && normTarget.length >= 3) return true;
-    return StringUtils.isFuzzyMatch(input, target);
+    return normInput == normTarget;
   }
 
-  bool _isFullNameMatch(String input, String firstName, String lastName) {
+  bool _isExactSingleNameMatch(String input, String lastName) {
+    final normInput = StringUtils.normalize(input);
+    final normLast = StringUtils.normalize(lastName);
+    if (normInput.isEmpty || normLast.isEmpty) return false;
+    return normInput == normLast;
+  }
+
+  bool _isExactFullNameMatch(String input, String firstName, String lastName) {
     final normInput = StringUtils.normalize(input);
     final normFirst = StringUtils.normalize(firstName);
     final normLast = StringUtils.normalize(lastName);
 
     if (normInput.isEmpty) return false;
 
-    final inputWords = normInput.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (normInput == '$normFirst $normLast') return true;
+    if (normInput == '$normLast $normFirst') return true;
+    if (normInput == '$normLast, $normFirst') return true;
 
-    final hasFirst = inputWords.any((w) => w == normFirst || StringUtils.isFuzzyMatch(w, normFirst));
-    final hasLast = inputWords.any((w) => w == normLast || StringUtils.isFuzzyMatch(w, normLast));
+    final inputWords = normInput.replaceAll(',', ' ').split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final firstWords = normFirst.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final lastWords = normLast.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
 
-    if (hasFirst && hasLast) return true;
-    return StringUtils.isFuzzyMatch(normInput, '$normFirst $normLast');
+    if (inputWords.length != (firstWords.length + lastWords.length)) return false;
+
+    final joinedInput = inputWords.join(' ');
+    final expectedFirstLast = [...firstWords, ...lastWords].join(' ');
+    final expectedLastFirst = [...lastWords, ...firstWords].join(' ');
+
+    return joinedInput == expectedFirstLast || joinedInput == expectedLastFirst;
   }
 
   void _handleAnswer(String answer) {
@@ -791,7 +794,10 @@ class _QuizScreenState extends State<QuizScreen> {
       if (question.ridingOptions != null && _selectedRiding == null) {
         return;
       }
-      final nameCorrect = StringUtils.isFuzzyMatch(answer, question.correctAnswer!);
+      final fullName = '${question.member.firstName} ${question.member.lastName}';
+      final nameCorrect = question.ridingOptions != null
+          ? (StringUtils.isFuzzyMatch(answer, fullName) || StringUtils.isFuzzyMatch(answer, '${question.member.lastName} ${question.member.firstName}'))
+          : StringUtils.isFuzzyMatch(answer, question.correctAnswer!);
       final ridingCorrect = question.ridingOptions == null || _selectedRiding == question.member.riding;
       correct = nameCorrect && ridingCorrect;
     } else if (widget.mode == QuizMode.faceMatch) {
@@ -803,19 +809,21 @@ class _QuizScreenState extends State<QuizScreen> {
 
       final actualFirstName = question.member.firstName;
       final actualLastName = question.member.lastName;
-      final actualParty = question.member.party ?? '';
+      final actualParty = (question.member.party != null && question.member.party!.isNotEmpty)
+          ? question.member.party!
+          : 'Independent';
       final actualRiding = question.member.riding ?? '';
 
       final isDuplicateMember = question.isDuplicate;
       final requireFullName = isDuplicateMember || _hasDuplicateToggle;
 
       final nameCorrect = requireFullName
-          ? _isFullNameMatch(typedName, actualFirstName, actualLastName)
-          : (_isAnswerMatch(typedName, actualLastName) || _isFullNameMatch(typedName, actualFirstName, actualLastName));
+          ? _isExactFullNameMatch(typedName, actualFirstName, actualLastName)
+          : (_isExactSingleNameMatch(typedName, actualLastName) || _isExactFullNameMatch(typedName, actualFirstName, actualLastName));
 
-      final partyCorrect = _isAnswerMatch(typedParty, actualParty);
+      final partyCorrect = _isExactAnswerMatch(typedParty, actualParty);
       final duplicateCorrect = _hasDuplicateToggle == isDuplicateMember;
-      final ridingCorrect = !isDuplicateMember || _isAnswerMatch(typedRiding, actualRiding);
+      final ridingCorrect = !isDuplicateMember || _isExactAnswerMatch(typedRiding, actualRiding);
 
       correct = nameCorrect && partyCorrect && duplicateCorrect && ridingCorrect;
     }
