@@ -180,9 +180,8 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
       ? parseInt(legislatureId) 
       : legislatureId;
 
-    // Use only equality filters to avoid composite index requirements
+    // Query by quizModeId and filter legislatureId in memory to handle numeric vs string IDs while strictly isolating per legislature
     const snapshot = await db.collection("quiz_results")
-      .where("legislatureId", "==", legId)
       .where("quizModeId", "==", quizModeId)
       .get();
 
@@ -196,6 +195,9 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
     snapshot.forEach(doc => {
       const data = doc.data();
       
+      // Strict Legislature isolation (e.g. House of Commons ID 1 vs Alberta ID 2)
+      if (data.legislatureId != legId && String(data.legislatureId) !== String(legId)) return;
+
       // Filter by percentage (>= 20%)
       if (data.filterPercentage < 0.2) return;
       
@@ -233,6 +235,57 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
   } catch (error) {
     console.error("Error fetching leaderboard:", error);
     res.status(500).send("Error fetching leaderboard");
+  }
+});
+
+exports.getUsersSummary = onRequest({ cors: true }, async (req, res) => {
+  try {
+    const snapshot = await db.collection("quiz_results").get();
+    
+    if (snapshot.empty) {
+      res.status(200).send({ users: [] });
+      return;
+    }
+
+    const userLastSeen = {};
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const rawName = (data.userName || "Anonymous").trim();
+      const uuid = data.userUuid || "unknown";
+
+      let tsIso = null;
+      if (data.timestamp && typeof data.timestamp.toDate === "function") {
+        tsIso = data.timestamp.toDate().toISOString();
+      }
+
+      if (!userLastSeen[rawName]) {
+        userLastSeen[rawName] = {
+          userName: rawName,
+          userUuid: uuid,
+          lastSubmitted: tsIso,
+          quizModeId: data.quizModeId,
+          totalSubmissions: 1
+        };
+      } else {
+        userLastSeen[rawName].totalSubmissions += 1;
+        if (tsIso && (!userLastSeen[rawName].lastSubmitted || tsIso > userLastSeen[rawName].lastSubmitted)) {
+          userLastSeen[rawName].lastSubmitted = tsIso;
+          userLastSeen[rawName].quizModeId = data.quizModeId;
+        }
+      }
+    });
+
+    const users = Object.values(userLastSeen).sort((a, b) => {
+      if (!a.lastSubmitted) return 1;
+      if (!b.lastSubmitted) return -1;
+      return b.lastSubmitted.localeCompare(a.lastSubmitted);
+    });
+
+    res.status(200).send({ users });
+  } catch (error) {
+    console.error("Error fetching users summary:", error);
+    res.status(500).send("Error fetching users summary");
   }
 });
 
