@@ -116,4 +116,113 @@ class StringUtils {
     
     return false;
   }
+
+  static const Map<String, String> _partyAliases = {
+    // Liberal -> LIB
+    'lib': 'liberal',
+    'liberal': 'liberal',
+    'liberals': 'liberal',
+    'liberal party': 'liberal',
+    'liberal party of canada': 'liberal',
+    'parti liberal': 'liberal',
+    'parti liberal du canada': 'liberal',
+    'parti libéral': 'liberal',
+    'parti libéral du canada': 'liberal',
+
+    // Conservative -> CON
+    'con': 'conservative',
+    'conservative': 'conservative',
+    'conservatives': 'conservative',
+    'conservative party': 'conservative',
+    'conservative party of canada': 'conservative',
+    'parti conservateur': 'conservative',
+    'parti conservateur du canada': 'conservative',
+    'pc': 'conservative',
+    'progressive conservative': 'conservative',
+    'progressive conservative party': 'conservative',
+    'ucp': 'conservative',
+    'united conservative': 'conservative',
+    'united conservative party': 'conservative',
+
+    // New Democrat Party -> NDP
+    'ndp': 'ndp',
+    'npd': 'ndp',
+    'new democrat': 'ndp',
+    'new democrats': 'ndp',
+    'new democrat party': 'ndp',
+    'new democratic': 'ndp',
+    'new democratic party': 'ndp',
+    'new democratic party of canada': 'ndp',
+    'nouveau parti democratique': 'ndp',
+    'nouveau parti democratique du canada': 'ndp',
+    'nouveau parti démocratique': 'ndp',
+    'nouveau parti démocratique du canada': 'ndp',
+
+    // Green -> GRN
+    'grn': 'green',
+    'green': 'green',
+    'greens': 'green',
+    'green party': 'green',
+    'green party of canada': 'green',
+    'parti vert': 'green',
+    'parti vert du canada': 'green',
+
+    // Bloc Quebois -> BQ
+    'bq': 'bloc_quebecois',
+    'bloc': 'bloc_quebecois',
+    'bloc quebecois': 'bloc_quebecois',
+    'bloc quebois': 'bloc_quebecois',
+    'bloc quebec': 'bloc_quebecois',
+    'bloc québécois': 'bloc_quebecois',
+    'bloc québec': 'bloc_quebecois',
+
+    // Indepenetn -> IND
+    'ind': 'independent',
+    'independent': 'independent',
+    'independents': 'independent',
+    'indepenetn': 'independent',
+    'independant': 'independent',
+    'indépendant': 'independent',
+
+    // Regional parties
+    'caq': 'caq',
+    'coalition avenir quebec': 'caq',
+    'coalition avenir québec': 'caq',
+    'pq': 'parti_quebecois',
+    'parti quebecois': 'parti_quebecois',
+    'parti québécois': 'parti_quebecois',
+    'qs': 'quebec_solidaire',
+    'quebec solidaire': 'quebec_solidaire',
+    'québec solidaire': 'quebec_solidaire',
+    'sp': 'saskatchewan_party',
+    'sask party': 'saskatchewan_party',
+    'saskatchewan party': 'saskatchewan_party',
+    'yp': 'yukon_party',
+    'yukon party': 'yukon_party',
+  };
+
+  /// Returns canonical party identifier if recognized.
+  static String? getCanonicalParty(String str) {
+    final norm = normalize(str);
+    return _partyAliases[norm];
+  }
+
+  /// Checks if a party input matches a target party name, allowing for abbreviations
+  /// (case-insensitive, accent-insensitive) and party synonyms.
+  static bool isPartyMatch(String input, String target) {
+    final normInput = normalize(input);
+    final normTarget = normalize(target);
+
+    if (normInput.isEmpty || normTarget.isEmpty) return false;
+    if (normInput == normTarget) return true;
+
+    final inputCanonical = getCanonicalParty(normInput);
+    final targetCanonical = getCanonicalParty(normTarget);
+
+    if (inputCanonical != null && targetCanonical != null) {
+      return inputCanonical == targetCanonical;
+    }
+
+    return false;
+  }
 }

@@ -5,14 +5,16 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const cors = require("cors")({ origin: true });
 
-admin.initializeApp();
-
-// Explicitly connect to Firestore emulator if running in emulator environment
-if (process.env.FUNCTIONS_EMULATOR && process.env.FIRESTORE_EMULATOR_HOST) {
-  console.log(`Functions emulator detected. Connecting to Firestore emulator at ${process.env.FIRESTORE_EMULATOR_HOST}`);
+let db;
+function getDb() {
+  if (!admin.apps.length) {
+    admin.initializeApp();
+  }
+  if (!db) {
+    db = getFirestore("memreps");
+  }
+  return db;
 }
-
-const db = getFirestore("memreps");
 let recaptchaClient;
 
 async function verifyRecaptchaToken(token) {
@@ -99,7 +101,7 @@ exports.syncProfile = onRequest({ cors: true }, async (req, res) => {
   }
 
   try {
-    const docRef = db.collection("users").doc(uuid);
+    const docRef = getDb().collection("users").doc(uuid);
     const docSnap = await docRef.get();
 
     // Enforce reCAPTCHA token verification only for new profiles
@@ -144,7 +146,7 @@ exports.syncQuizResult = onRequest({ cors: true }, async (req, res) => {
   }
 
   try {
-    await db.collection("quiz_results").add({
+    await getDb().collection("quiz_results").add({
       userUuid: userUuid || "",
       userName: userName || "Anonymous",
       legislatureId: legislatureId || 1,
@@ -181,7 +183,7 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
       : legislatureId;
 
     // Query by quizModeId and filter legislatureId in memory to handle numeric vs string IDs while strictly isolating per legislature
-    const snapshot = await db.collection("quiz_results")
+    const snapshot = await getDb().collection("quiz_results")
       .where("quizModeId", "==", quizModeId)
       .get();
 
@@ -240,7 +242,7 @@ exports.getLeaderboard = onRequest({ cors: true }, async (req, res) => {
 
 exports.getUsersSummary = onRequest({ cors: true }, async (req, res) => {
   try {
-    const snapshot = await db.collection("quiz_results").get();
+    const snapshot = await getDb().collection("quiz_results").get();
     
     if (snapshot.empty) {
       res.status(200).send({ users: [] });

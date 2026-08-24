@@ -50,18 +50,54 @@ bool checkNameRecallMatch(String answer, String firstName, String lastName, bool
 
 void main() {
   group('Final Test Exact Matching Tests', () {
-    test('Party exact spell check and case insensitivity', () {
-      const actualParty = 'Liberal';
+    test('Party abbreviations and case insensitivity', () {
+      // Liberal -> LIB
+      expect(StringUtils.isPartyMatch('Liberal', 'Liberal'), isTrue);
+      expect(StringUtils.isPartyMatch('liberal', 'Liberal'), isTrue);
+      expect(StringUtils.isPartyMatch('LIBERAL', 'Liberal'), isTrue);
+      expect(StringUtils.isPartyMatch('LIB', 'Liberal'), isTrue);
+      expect(StringUtils.isPartyMatch('lib', 'Liberal'), isTrue);
+      expect(StringUtils.isPartyMatch('  lib ', 'Liberal'), isTrue);
+      expect(StringUtils.isPartyMatch('Liberal Party of Canada', 'Liberal'), isTrue);
+      expect(StringUtils.isPartyMatch('LIB', 'Liberal Party'), isTrue);
 
-      expect(isExactAnswerMatch('Liberal', actualParty), isTrue);
-      expect(isExactAnswerMatch('liberal', actualParty), isTrue);
-      expect(isExactAnswerMatch('LIBERAL', actualParty), isTrue);
-      expect(isExactAnswerMatch('  liberal ', actualParty), isTrue);
+      // Conservative -> CON
+      expect(StringUtils.isPartyMatch('Conservative', 'Conservative'), isTrue);
+      expect(StringUtils.isPartyMatch('con', 'Conservative'), isTrue);
+      expect(StringUtils.isPartyMatch('CON', 'Conservative'), isTrue);
+      expect(StringUtils.isPartyMatch('Conservative Party of Canada', 'Conservative'), isTrue);
+      expect(StringUtils.isPartyMatch('CON', 'Conservative Party of Canada'), isTrue);
 
-      // Typos or partial strings should fail
-      expect(isExactAnswerMatch('Lib', actualParty), isFalse);
-      expect(isExactAnswerMatch('Libeal', actualParty), isFalse);
-      expect(isExactAnswerMatch('Liberals', actualParty), isFalse);
+      // New Democrat Party -> NDP
+      expect(StringUtils.isPartyMatch('NDP', 'New Democratic Party'), isTrue);
+      expect(StringUtils.isPartyMatch('ndp', 'NDP'), isTrue);
+      expect(StringUtils.isPartyMatch('New Democrat Party', 'NDP'), isTrue);
+      expect(StringUtils.isPartyMatch('New Democratic Party', 'NDP'), isTrue);
+      expect(StringUtils.isPartyMatch('NDP', 'New Democrat Party'), isTrue);
+
+      // Green -> GRN
+      expect(StringUtils.isPartyMatch('Green', 'Green Party'), isTrue);
+      expect(StringUtils.isPartyMatch('GRN', 'Green'), isTrue);
+      expect(StringUtils.isPartyMatch('grn', 'Green Party'), isTrue);
+      expect(StringUtils.isPartyMatch('Green Party of Canada', 'GRN'), isTrue);
+
+      // Bloc Quebois / Bloc Québécois -> BQ
+      expect(StringUtils.isPartyMatch('BQ', 'Bloc Québécois'), isTrue);
+      expect(StringUtils.isPartyMatch('bq', 'Bloc Quebecois'), isTrue);
+      expect(StringUtils.isPartyMatch('Bloc Quebois', 'Bloc Québécois'), isTrue);
+      expect(StringUtils.isPartyMatch('BQ', 'Bloc Quebois'), isTrue);
+
+      // Indepenetn / Independent -> IND
+      expect(StringUtils.isPartyMatch('IND', 'Independent'), isTrue);
+      expect(StringUtils.isPartyMatch('ind', 'Independent'), isTrue);
+      expect(StringUtils.isPartyMatch('Indepenetn', 'Independent'), isTrue);
+      expect(StringUtils.isPartyMatch('IND', 'Indepenetn'), isTrue);
+      expect(StringUtils.isPartyMatch('Independent', 'IND'), isTrue);
+
+      // Typos or invalid strings should fail
+      expect(StringUtils.isPartyMatch('Libeal', 'Liberal'), isFalse);
+      expect(StringUtils.isPartyMatch('XYZ', 'Liberal'), isFalse);
+      expect(StringUtils.isPartyMatch('', 'Liberal'), isFalse);
     });
 
     test('Riding exact spell check and word order matching', () {

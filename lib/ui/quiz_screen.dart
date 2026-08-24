@@ -821,7 +821,7 @@ class _QuizScreenState extends State<QuizScreen> {
           ? _isExactFullNameMatch(typedName, actualFirstName, actualLastName)
           : (_isExactSingleNameMatch(typedName, actualLastName) || _isExactFullNameMatch(typedName, actualFirstName, actualLastName));
 
-      final partyCorrect = _isExactAnswerMatch(typedParty, actualParty);
+      final partyCorrect = StringUtils.isPartyMatch(typedParty, actualParty);
       final duplicateCorrect = _hasDuplicateToggle == isDuplicateMember;
       final ridingCorrect = !isDuplicateMember || _isExactAnswerMatch(typedRiding, actualRiding);
 
