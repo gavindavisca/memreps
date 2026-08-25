@@ -17,6 +17,46 @@ class ScraperService {
     return '$baseUrl?url=${Uri.encodeComponent(url)}';
   }
 
+  String _normalizeRiding(String? riding) {
+    if (riding == null) return '';
+    return StringUtils.normalize(
+      riding
+        .replaceAll('\u2014', '-') // em dash
+        .replaceAll('\u2013', '-') // en dash
+        .replaceAll('\u2012', '-') // figure dash
+        .replaceAll('\u2015', '-') // horizontal bar
+        .replaceAll('—', '-')
+        .replaceAll('–', '-')
+    ).replaceAll(RegExp(r'\s*-\s*'), '-');
+  }
+
+  bool _isMemberMatch(MembersCompanion base, String offFirstName, String offLastName, String offRiding) {
+    final baseLastName = StringUtils.normalize(base.lastName.value);
+    final baseFirstName = StringUtils.normalize(base.firstName.value);
+    final targetLastName = StringUtils.normalize(offLastName);
+    final targetFirstName = StringUtils.normalize(offFirstName);
+    
+    final baseRidingNorm = _normalizeRiding(base.riding.value);
+    final targetRidingNorm = _normalizeRiding(offRiding);
+
+    // Exact last name and matching normalized riding
+    if (baseLastName == targetLastName && baseRidingNorm.isNotEmpty && baseRidingNorm == targetRidingNorm) {
+      return true;
+    }
+
+    // Exact full name match (first + last)
+    if (baseLastName == targetLastName && baseFirstName == targetFirstName && baseFirstName.isNotEmpty) {
+      return true;
+    }
+
+    // Fuzzy / diacritic-normalized last name match + riding
+    if (StringUtils.isFuzzyMatch(baseLastName, targetLastName) && baseRidingNorm == targetRidingNorm && baseRidingNorm.isNotEmpty) {
+      return true;
+    }
+
+    return false;
+  }
+
   Future<List<MembersCompanion>> fetchMembers(String slug, {required String name, Function(int)? onProgress}) async {
     try {
       onProgress?.call(1);
@@ -99,8 +139,7 @@ class ScraperService {
         final offParty = row[caucusIdx].toString().trim();
         
         final match = baseMembers.firstWhere(
-          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
-                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          (m) => _isMemberMatch(m, offFirstName, offLastName, offRiding),
           orElse: () => MembersCompanion(
             firstName: Value(offFirstName),
             lastName: Value(offLastName),
@@ -155,8 +194,7 @@ class ScraperService {
         seenMembers.add(memberKey);
 
         final match = baseMembers.firstWhere(
-          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
-                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          (m) => _isMemberMatch(m, offFirstName, offLastName, offRiding),
           orElse: () => MembersCompanion(
             firstName: Value(offFirstName),
             lastName: Value(offLastName),
@@ -205,8 +243,7 @@ class ScraperService {
 
         // Find match in OpenNorth data by name and riding
         final match = baseMembers.firstWhere(
-          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
-                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          (m) => _isMemberMatch(m, offFirstName, offLastName, offRiding),
           orElse: () => MembersCompanion(
             firstName: Value(offFirstName),
             lastName: Value(offLastName),
@@ -264,8 +301,7 @@ class ScraperService {
         final offParty = node.findElements('PartiPolitique').first.innerText;
         
         final match = baseMembers.firstWhere(
-          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
-                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          (m) => _isMemberMatch(m, offFirstName, offLastName, offRiding),
           orElse: () => MembersCompanion(
             firstName: Value(offFirstName),
             lastName: Value(offLastName),
@@ -319,8 +355,7 @@ class ScraperService {
         }
 
         final match = baseMembers.firstWhere(
-          (m) => m.lastName.value.toLowerCase() == offLastName.toLowerCase() && 
-                 m.riding.value?.toLowerCase() == offRiding.toLowerCase(),
+          (m) => _isMemberMatch(m, offFirstName, offLastName, offRiding),
           orElse: () => MembersCompanion(
             firstName: Value(offFirstName),
             lastName: Value(offLastName),
@@ -410,13 +445,13 @@ class ScraperService {
       final tilesDoc = html.parse(tilesResponse.data);
       final imageMap = <String, String>{};
       
-      // Target both special role cards and standard senator cards
-      final cards = tilesDoc.querySelectorAll('a.sc-senators-political-card-photo, .sc-senators-senator-card-photo a');
+      // Target all anchor tags that contain an img element within the senator tiles
+      final cards = tilesDoc.querySelectorAll('a');
       for (final card in cards) {
         final slug = card.attributes['href'];
         final img = card.querySelector('img');
         final src = img?.attributes['src'];
-        if (slug != null && src != null) {
+        if (slug != null && src != null && slug.contains('/senators/')) {
           final fullSrc = src.startsWith('http') ? src : 'https://sencanada.ca$src';
           imageMap[slug] = fullSrc;
         }

@@ -296,67 +296,109 @@ function removeAccents(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-exports.proxyImage = onRequest({ cors: true }, async (req, res) => {
-  const imageUrl = req.query.url;
-  if (!imageUrl) {
-    res.status(400).send("Missing url parameter");
-    return;
-  }
+exports.proxyImage = onRequest({ cors: true }, (req, res) => {
+  return cors(req, res, async () => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "*");
 
-  const fetchImage = async (url) => {
-    return await axios.get(url, {
-      responseType: "arraybuffer",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-      }
-    });
-  };
-
-  try {
-    let response;
-    try {
-      response = await fetchImage(imageUrl);
-    } catch (error) {
-      // If failed, try stripping accents as a fallback (common for Canadian govt sites)
-      const nonAccentedUrl = removeAccents(imageUrl);
-      if (nonAccentedUrl !== imageUrl) {
-        console.log(`Retrying with non-accented URL: ${nonAccentedUrl}`);
-        response = await fetchImage(nonAccentedUrl);
-      } else {
-        throw error;
-      }
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
     }
 
-    const contentType = response.headers["content-type"];
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=2592000, s-maxage=2592000"); // Cache for 30 days
-    res.send(response.data);
-  } catch (error) {
-    console.error("Error proxying image:", error.message);
-    res.status(500).send("Error fetching image");
-  }
+    const imageUrl = req.query.url;
+    if (!imageUrl) {
+      res.status(400).send("Missing url parameter");
+      return;
+    }
+
+    const fetchImage = async (url) => {
+      return await axios.get(url, {
+        responseType: "arraybuffer",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+      });
+    };
+
+    try {
+      const candidates = [imageUrl];
+
+      const nonAccentedUrl = removeAccents(imageUrl);
+      if (nonAccentedUrl !== imageUrl) {
+        candidates.push(nonAccentedUrl);
+      }
+
+      if (imageUrl.includes("/OfficialMPPhotos/45/")) {
+        const url44 = imageUrl.replace("/OfficialMPPhotos/45/", "/OfficialMPPhotos/44/");
+        candidates.push(url44);
+        const url44NoAccent = removeAccents(url44);
+        if (url44NoAccent !== url44) candidates.push(url44NoAccent);
+      } else if (imageUrl.includes("/OfficialMPPhotos/44/")) {
+        const url45 = imageUrl.replace("/OfficialMPPhotos/44/", "/OfficialMPPhotos/45/");
+        candidates.push(url45);
+        const url45NoAccent = removeAccents(url45);
+        if (url45NoAccent !== url45) candidates.push(url45NoAccent);
+      }
+
+      let response;
+      let lastError;
+      for (const targetUrl of candidates) {
+        try {
+          response = await fetchImage(targetUrl);
+          if (response && response.status === 200) break;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      if (!response) {
+        throw lastError || new Error("Failed to fetch image from all candidates");
+      }
+
+      const contentType = response.headers["content-type"] || "image/jpeg";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=2592000, s-maxage=2592000"); // Cache for 30 days
+      res.send(response.data);
+    } catch (error) {
+      console.error("Error proxying image:", error.message);
+      res.status(500).send("Error fetching image");
+    }
+  });
 });
 
-exports.proxyData = onRequest({ cors: true }, async (req, res) => {
-  const url = req.query.url;
-  if (!url) {
-    res.status(400).send("Missing url parameter");
-    return;
-  }
+exports.proxyData = onRequest({ cors: true }, (req, res) => {
+  return cors(req, res, async () => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "*");
 
-  try {
-    const response = await axios.get(url, {
-      responseType: "arraybuffer",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-      }
-    });
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
 
-    const contentType = response.headers["content-type"];
-    res.setHeader("Content-Type", contentType);
-    res.send(response.data);
-  } catch (error) {
-    console.error("Error proxying data:", error.message);
-    res.status(500).send("Error fetching data");
-  }
+    const url = req.query.url;
+    if (!url) {
+      res.status(400).send("Missing url parameter");
+      return;
+    }
+
+    try {
+      const response = await axios.get(url, {
+        responseType: "arraybuffer",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+      });
+
+      const contentType = response.headers["content-type"];
+      res.setHeader("Content-Type", contentType);
+      res.send(response.data);
+    } catch (error) {
+      console.error("Error proxying data:", error.message);
+      res.status(500).send("Error fetching data");
+    }
+  });
 });

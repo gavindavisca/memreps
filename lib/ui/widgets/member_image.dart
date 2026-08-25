@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../../logic/app_state.dart';
 
+import '../../logic/config.dart';
+
 class MemberImage extends StatelessWidget {
   final String imageUrl;
   final double? width;
@@ -25,16 +27,20 @@ class MemberImage extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final isGrayscale = appState.currentProfile?.grayscalePhotos ?? false;
 
-    String finalUrl = imageUrl;
-    
-    if (kIsWeb && imageUrl.isNotEmpty) {
-      if (kDebugMode) {
-        // In local development, point to the local Functions emulator
-        finalUrl = 'http://127.0.0.1:5001/openclaw-bot-486015/us-central1/proxyImage?url=${Uri.encodeComponent(imageUrl)}';
-      } else {
-        // In production, use the absolute path since GitHub Pages hosting doesn't support relative rewrites
-        finalUrl = 'https://proxyimage-wq27mxu42a-uc.a.run.app?url=${Uri.encodeComponent(imageUrl)}';
-      }
+    final trimmedUrl = imageUrl.trim();
+    if (trimmedUrl.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+        child: const Icon(Icons.person, size: 40, color: Colors.grey),
+      );
+    }
+
+    String finalUrl = trimmedUrl;
+    if (kIsWeb) {
+      final proxyBase = Config.getFunctionUrl('proxyImage');
+      finalUrl = '$proxyBase?url=${Uri.encodeComponent(trimmedUrl)}';
     }
 
     Widget imageWidget = CachedNetworkImage(
@@ -44,6 +50,8 @@ class MemberImage extends StatelessWidget {
       fit: fit,
       alignment: alignment,
       placeholder: (context, url) => Container(
+        width: width,
+        height: height,
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
         child: const Center(
           child: SizedBox(
@@ -54,6 +62,8 @@ class MemberImage extends StatelessWidget {
         ),
       ),
       errorWidget: (context, url, error) => Container(
+        width: width,
+        height: height,
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
         child: const Icon(Icons.person, size: 40, color: Colors.grey),
       ),
