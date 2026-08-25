@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:provider/provider.dart';
 import '../../logic/app_state.dart';
 
@@ -46,45 +45,69 @@ class MemberImage extends StatelessWidget {
 
     debugPrint('🖼️ [MemberImage] Loading: "$finalUrl" (Raw: "$trimmedUrl")');
 
-    Widget imageWidget = CachedNetworkImage(
-      imageUrl: finalUrl,
-      imageRenderMethodForWeb: ImageRenderMethodForWeb.HtmlImage,
-      width: width,
-      height: height,
-      fit: fit,
-      alignment: alignment,
-      imageBuilder: (context, imageProvider) {
-        debugPrint('✅ [MemberImage] Loaded successfully: "$finalUrl"');
-        return Image(
-          image: imageProvider,
-          width: width,
-          height: height,
-          fit: fit,
-          alignment: alignment,
-        );
-      },
-      placeholder: (context, url) => Container(
+    Widget imageWidget;
+    if (kIsWeb) {
+      imageWidget = Image.network(
+        finalUrl,
         width: width,
         height: height,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
-        child: const Center(
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(strokeWidth: 3),
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) {
-        debugPrint('❌ [MemberImage] Error loading "$url": $error');
-        return Container(
+        fit: fit,
+        alignment: alignment,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: width,
+            height: height,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+            child: const Center(
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('❌ [MemberImage] Error loading "$finalUrl": $error');
+          return Container(
+            width: width,
+            height: height,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+            child: const Icon(Icons.person, size: 40, color: Colors.grey),
+          );
+        },
+      );
+    } else {
+      imageWidget = CachedNetworkImage(
+        imageUrl: finalUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        alignment: alignment,
+        placeholder: (context, url) => Container(
           width: width,
           height: height,
           color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
-          child: const Icon(Icons.person, size: 40, color: Colors.grey),
-        );
-      },
-    );
+          child: const Center(
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) {
+          debugPrint('❌ [MemberImage] Error loading "$url": $error');
+          return Container(
+            width: width,
+            height: height,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+            child: const Icon(Icons.person, size: 40, color: Colors.grey),
+          );
+        },
+      );
+    }
 
     if (isGrayscale) {
       imageWidget = ColorFiltered(
