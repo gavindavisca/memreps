@@ -3,6 +3,7 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { RecaptchaEnterpriseServiceClient } = require("@google-cloud/recaptcha-enterprise");
 const admin = require("firebase-admin");
 const axios = require("axios");
+const sharp = require("sharp");
 const cors = require("cors")({ origin: true });
 
 let db;
@@ -366,9 +367,21 @@ exports.proxyImage = onRequest(async (req, res) => {
       throw lastError || new Error("Failed to fetch image from all candidates");
     }
 
-    const contentType = response.headers["content-type"] || "image/jpeg";
-    const dataBuffer = Buffer.from(response.data);
-    console.log(`[proxyImage] Successfully fetched ${successfulUrl} (${dataBuffer.length} bytes, ${contentType})`);
+    let contentType = response.headers["content-type"] || "image/jpeg";
+    let dataBuffer = Buffer.from(response.data);
+
+    try {
+      // Re-encode through sharp to sanitize corrupt EXIF/ICC profiles, multi-image offsets,
+      // and bloated thumbnails that cause browser Image.decode / CanvasKit Skia crashes.
+      dataBuffer = await sharp(dataBuffer)
+        .rotate()
+        .jpeg({ quality: 85, mozjpeg: true })
+        .toBuffer();
+      contentType = "image/jpeg";
+      console.log(`[proxyImage] Successfully sanitized ${successfulUrl} (${dataBuffer.length} bytes, image/jpeg)`);
+    } catch (sharpErr) {
+      console.warn(`[proxyImage] Sharp sanitization fallback for ${successfulUrl}:`, sharpErr.message);
+    }
 
     res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=2592000, s-maxage=2592000"); // Cache for 30 days
