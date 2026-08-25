@@ -296,109 +296,119 @@ function removeAccents(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-exports.proxyImage = onRequest({ cors: true }, (req, res) => {
-  return cors(req, res, async () => {
-    res.set("Access-Control-Allow-Origin", "*");
-    res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res.set("Access-Control-Allow-Headers", "*");
+exports.proxyImage = onRequest(async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("Access-Control-Expose-Headers", "*");
 
-    if (req.method === "OPTIONS") {
-      res.status(204).send("");
-      return;
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
+
+  const imageUrl = req.query.url;
+  if (!imageUrl) {
+    console.warn("[proxyImage] Rejected request with missing url parameter");
+    res.status(400).send("Missing url parameter");
+    return;
+  }
+
+  console.log(`[proxyImage] Processing request for: ${imageUrl} (Origin: ${req.headers.origin || "none"})`);
+
+  const fetchImage = async (url) => {
+    return await axios.get(url, {
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+      }
+    });
+  };
+
+  try {
+    const candidates = [imageUrl];
+
+    const nonAccentedUrl = removeAccents(imageUrl);
+    if (nonAccentedUrl !== imageUrl) {
+      candidates.push(nonAccentedUrl);
     }
 
-    const imageUrl = req.query.url;
-    if (!imageUrl) {
-      res.status(400).send("Missing url parameter");
-      return;
+    if (imageUrl.includes("/OfficialMPPhotos/45/")) {
+      const url44 = imageUrl.replace("/OfficialMPPhotos/45/", "/OfficialMPPhotos/44/");
+      candidates.push(url44);
+      const url44NoAccent = removeAccents(url44);
+      if (url44NoAccent !== url44) candidates.push(url44NoAccent);
+    } else if (imageUrl.includes("/OfficialMPPhotos/44/")) {
+      const url45 = imageUrl.replace("/OfficialMPPhotos/44/", "/OfficialMPPhotos/45/");
+      candidates.push(url45);
+      const url45NoAccent = removeAccents(url45);
+      if (url45NoAccent !== url45) candidates.push(url45NoAccent);
     }
 
-    const fetchImage = async (url) => {
-      return await axios.get(url, {
-        responseType: "arraybuffer",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    let response;
+    let successfulUrl;
+    let lastError;
+    for (const targetUrl of candidates) {
+      try {
+        response = await fetchImage(targetUrl);
+        if (response && response.status === 200) {
+          successfulUrl = targetUrl;
+          break;
         }
-      });
-    };
-
-    try {
-      const candidates = [imageUrl];
-
-      const nonAccentedUrl = removeAccents(imageUrl);
-      if (nonAccentedUrl !== imageUrl) {
-        candidates.push(nonAccentedUrl);
+      } catch (err) {
+        lastError = err;
+        console.log(`[proxyImage] Candidate failed: ${targetUrl} (${err.response ? err.response.status : err.message})`);
       }
-
-      if (imageUrl.includes("/OfficialMPPhotos/45/")) {
-        const url44 = imageUrl.replace("/OfficialMPPhotos/45/", "/OfficialMPPhotos/44/");
-        candidates.push(url44);
-        const url44NoAccent = removeAccents(url44);
-        if (url44NoAccent !== url44) candidates.push(url44NoAccent);
-      } else if (imageUrl.includes("/OfficialMPPhotos/44/")) {
-        const url45 = imageUrl.replace("/OfficialMPPhotos/44/", "/OfficialMPPhotos/45/");
-        candidates.push(url45);
-        const url45NoAccent = removeAccents(url45);
-        if (url45NoAccent !== url45) candidates.push(url45NoAccent);
-      }
-
-      let response;
-      let lastError;
-      for (const targetUrl of candidates) {
-        try {
-          response = await fetchImage(targetUrl);
-          if (response && response.status === 200) break;
-        } catch (err) {
-          lastError = err;
-        }
-      }
-
-      if (!response) {
-        throw lastError || new Error("Failed to fetch image from all candidates");
-      }
-
-      const contentType = response.headers["content-type"] || "image/jpeg";
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Cache-Control", "public, max-age=2592000, s-maxage=2592000"); // Cache for 30 days
-      res.send(response.data);
-    } catch (error) {
-      console.error("Error proxying image:", error.message);
-      res.status(500).send("Error fetching image");
     }
-  });
+
+    if (!response) {
+      console.error(`[proxyImage] All candidates failed for: ${imageUrl}. Candidates tried: ${JSON.stringify(candidates)}`);
+      throw lastError || new Error("Failed to fetch image from all candidates");
+    }
+
+    const contentType = response.headers["content-type"] || "image/jpeg";
+    const dataBuffer = Buffer.from(response.data);
+    console.log(`[proxyImage] Successfully fetched ${successfulUrl} (${dataBuffer.length} bytes, ${contentType})`);
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=2592000, s-maxage=2592000"); // Cache for 30 days
+    res.send(dataBuffer);
+  } catch (error) {
+    console.error(`[proxyImage] Error proxying image ${imageUrl}:`, error.message);
+    res.status(500).send("Error fetching image");
+  }
 });
 
-exports.proxyData = onRequest({ cors: true }, (req, res) => {
-  return cors(req, res, async () => {
-    res.set("Access-Control-Allow-Origin", "*");
-    res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res.set("Access-Control-Allow-Headers", "*");
+exports.proxyData = onRequest(async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("Access-Control-Expose-Headers", "*");
 
-    if (req.method === "OPTIONS") {
-      res.status(204).send("");
-      return;
-    }
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
 
-    const url = req.query.url;
-    if (!url) {
-      res.status(400).send("Missing url parameter");
-      return;
-    }
+  const targetUrl = req.query.url;
+  if (!targetUrl) {
+    res.status(400).send("Missing url parameter");
+    return;
+  }
 
-    try {
-      const response = await axios.get(url, {
-        responseType: "arraybuffer",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        }
-      });
+  try {
+    const response = await axios.get(targetUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+      }
+    });
 
-      const contentType = response.headers["content-type"];
-      res.setHeader("Content-Type", contentType);
-      res.send(response.data);
-    } catch (error) {
-      console.error("Error proxying data:", error.message);
-      res.status(500).send("Error fetching data");
-    }
-  });
+    const contentType = response.headers["content-type"] || "text/plain";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=86400"); // Cache for 24 hours
+    res.send(response.data);
+  } catch (error) {
+    console.error("Error proxying data:", error.message);
+    res.status(500).send("Error fetching data");
+  }
 });

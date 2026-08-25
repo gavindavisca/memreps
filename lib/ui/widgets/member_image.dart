@@ -41,8 +41,10 @@ class MemberImage extends StatelessWidget {
     String finalUrl = trimmedUrl;
     if (kIsWeb) {
       final proxyBase = Config.getFunctionUrl('proxyImage');
-      finalUrl = '$proxyBase?url=${Uri.encodeComponent(trimmedUrl)}';
+      finalUrl = '$proxyBase?url=${Uri.encodeComponent(trimmedUrl)}&cb=1';
     }
+
+    debugPrint('🖼️ [MemberImage] Loading: "$finalUrl" (Raw: "$trimmedUrl")');
 
     Widget imageWidget = CachedNetworkImage(
       imageUrl: finalUrl,
@@ -51,6 +53,16 @@ class MemberImage extends StatelessWidget {
       height: height,
       fit: fit,
       alignment: alignment,
+      imageBuilder: (context, imageProvider) {
+        debugPrint('✅ [MemberImage] Loaded successfully: "$finalUrl"');
+        return Image(
+          image: imageProvider,
+          width: width,
+          height: height,
+          fit: fit,
+          alignment: alignment,
+        );
+      },
       placeholder: (context, url) => Container(
         width: width,
         height: height,
@@ -63,12 +75,15 @@ class MemberImage extends StatelessWidget {
           ),
         ),
       ),
-      errorWidget: (context, url, error) => Container(
-        width: width,
-        height: height,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
-        child: const Icon(Icons.person, size: 40, color: Colors.grey),
-      ),
+      errorWidget: (context, url, error) {
+        debugPrint('❌ [MemberImage] Error loading "$url": $error');
+        return Container(
+          width: width,
+          height: height,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+          child: const Icon(Icons.person, size: 40, color: Colors.grey),
+        );
+      },
     );
 
     if (isGrayscale) {
